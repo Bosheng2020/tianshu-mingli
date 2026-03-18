@@ -7,7 +7,8 @@ const express = require('express');
 const path = require('path');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
+function uuidv4() { return crypto.randomUUID(); }
 
 const app = express();
 const PORT = process.env.PORT || 3888;
