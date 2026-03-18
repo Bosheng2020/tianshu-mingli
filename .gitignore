@@ -1,0 +1,8 @@
+node_modules/
+tianshu.db
+.superpowers/
+.DS_Store
+/tmp/
+*.log
+tianshu.db-shm
+tianshu.db-wal

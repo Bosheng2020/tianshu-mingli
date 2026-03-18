@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>天枢命理 — 八字 · 紫微斗数 · 梅花易数 · 观音灵签 · 风水</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.7/lunar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/iztro@2.5.7/dist/iztro.min.js"></script>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <h1>天枢命理</h1>
+        <p class="subtitle">八字 · 紫微斗数 · 梅花易数 · 观音灵签 · 风水堪舆</p>
+    </div>
+</header>
+
+<!-- Birth info (collapsible after first use) -->
+<section class="birth-info-bar" id="birth-bar">
+    <div class="container">
+        <form id="birth-form">
+            <div class="birth-row">
+                <div class="birth-group">
+                    <label>出生日期（阳历）</label>
+                    <div class="date-inputs">
+                        <select id="birth-year"></select>
+                        <select id="birth-month"></select>
+                        <select id="birth-day"></select>
+                    </div>
+                </div>
+                <div class="birth-group">
+                    <label>出生时间</label>
+                    <div class="time-inputs">
+                        <select id="birth-hour"></select>
+                        <select id="birth-minute"></select>
+                    </div>
+                </div>
+                <div class="birth-group">
+                    <label>出生地点</label>
+                    <select id="birth-city"></select>
+                </div>
+                <div class="birth-group birth-group-gender">
+                    <label>性别</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="birth-gender" value="male" checked> 男</label>
+                        <label><input type="radio" name="birth-gender" value="female"> 女</label>
+                    </div>
+                </div>
+                <div class="birth-group birth-group-btn">
+                    <button type="submit" class="btn btn-primary">开始排盘</button>
+                </div>
+            </div>
+            <div id="solar-time-info" class="solar-time-info" style="display:none"></div>
+        </form>
+    </div>
+</section>
+
+<!-- Tab groups -->
+<nav class="tabs" id="main-tabs">
+    <div class="container tab-scroll">
+        <span class="tab-group-label">命理</span>
+        <button class="tab active" data-tab="bazi">八字命盘</button>
+        <button class="tab" data-tab="ziwei">紫微斗数</button>
+        <button class="tab" data-tab="fengshui">风水建议</button>
+        <span class="tab-divider"></span>
+        <span class="tab-group-label">占卜</span>
+        <button class="tab" data-tab="meihua">梅花易数</button>
+        <button class="tab" data-tab="lingqian">观音灵签</button>
+        <button class="tab" data-tab="jiaobei">掷筊问事</button>
+    </div>
+</nav>
+
+<main class="container">
+    <!-- 八字 -->
+    <section id="bazi" class="tab-content active">
+        <div id="bazi-result" class="result-area">
+            <div class="placeholder-card"><div class="placeholder-icon">卦</div><p>请在上方输入出生信息后点击「开始排盘」</p></div>
+        </div>
+    </section>
+
+    <!-- 紫微 -->
+    <section id="ziwei" class="tab-content">
+        <div id="ziwei-result" class="result-area">
+            <div class="placeholder-card"><div class="placeholder-icon">星</div><p>请在上方输入出生信息后点击「开始排盘」</p></div>
+        </div>
+    </section>
+
+    <!-- 风水 -->
+    <section id="fengshui" class="tab-content">
+        <div id="fengshui-result" class="result-area">
+            <div class="placeholder-card"><div class="placeholder-icon">宅</div><p>请在上方输入出生信息后点击「开始排盘」</p></div>
+        </div>
+    </section>
+
+    <!-- 梅花易数 -->
+    <section id="meihua" class="tab-content">
+        <div class="interp-card">
+            <h2>梅花易数</h2>
+            <p class="section-note">梅花易数为占卜之术，心诚则灵。起卦时请专注于所问之事。</p>
+            <form id="meihua-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>起卦方式</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="meihua-method" value="number" checked> 数字起卦</label>
+                            <label><input type="radio" name="meihua-method" value="time"> 时间起卦</label>
+                            <label><input type="radio" name="meihua-method" value="random"> 随机起卦</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="number-input" class="form-row">
+                    <div class="form-group">
+                        <label>请输入数字（1~3个）</label>
+                        <div class="number-inputs">
+                            <input type="number" id="meihua-num1" min="0" max="999" placeholder="第一个数">
+                            <input type="number" id="meihua-num2" min="0" max="999" placeholder="第二个数 (可选)">
+                            <input type="number" id="meihua-num3" min="0" max="999" placeholder="第三个数 (可选)">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>所问之事（可选）</label>
+                        <input type="text" id="meihua-question" placeholder="例如：今日运势如何？">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">起卦</button>
+            </form>
+        </div>
+        <div id="meihua-result" class="result-area"></div>
+    </section>
+
+    <!-- 观音灵签 -->
+    <section id="lingqian" class="tab-content">
+        <div class="interp-card" style="text-align:center">
+            <h2>观音灵签</h2>
+            <p class="section-note" style="text-align:center;border:none;padding:0">心中默念所求之事，诚心祈请观世音菩萨指引。</p>
+            <div style="font-size:5rem;margin:20px 0">🙏</div>
+            <div class="form-row" style="justify-content:center">
+                <div class="form-group" style="max-width:400px">
+                    <input type="text" id="qian-question" placeholder="心中所求之事（可不填）">
+                </div>
+            </div>
+            <button class="btn btn-primary" id="btn-draw-qian" style="font-size:1.1rem;padding:14px 40px;margin-top:8px">
+                诚心抽签
+            </button>
+            <p style="font-size:.82rem;color:var(--ink-light);margin-top:12px">共五十签，每签皆有签诗与解读</p>
+        </div>
+        <div id="qian-result" class="result-area"></div>
+    </section>
+
+    <!-- 掷筊 -->
+    <section id="jiaobei" class="tab-content">
+        <div class="interp-card" style="text-align:center">
+            <h2>掷筊问事</h2>
+            <p class="section-note" style="text-align:center;border:none;padding:0">掷筊是向神明请示的传统方式。心中默想问题，掷出三次筊杯，以三次结果综合判断神明旨意。</p>
+            <div style="font-size:4rem;margin:16px 0">🌙☀️</div>
+            <div class="form-row" style="justify-content:center">
+                <div class="form-group" style="max-width:400px">
+                    <input type="text" id="jiao-question" placeholder="请示神明之事（可不填）">
+                </div>
+            </div>
+            <button class="btn btn-primary" id="btn-throw-jiao" style="font-size:1.1rem;padding:14px 40px;margin-top:8px">
+                掷筊三次
+            </button>
+            <div style="margin-top:16px;font-size:.84rem;color:var(--ink-light)">
+                <p>🌙☀️ <strong>圣筊</strong>：一阴一阳，神明应允</p>
+                <p>☀️☀️ <strong>笑筊</strong>：两阳，神明含笑，问题不明确</p>
+                <p>🌙🌙 <strong>阴筊</strong>：两阴，神明不允</p>
+            </div>
+        </div>
+        <div id="jiao-result" class="result-area"></div>
+    </section>
+</main>
+
+<footer>
+    <div class="container">
+        <p>天枢命理 &copy; 2026 &nbsp;|&nbsp; 命由天定，运由己造。仅供参考。</p>
+    </div>
+</footer>
+
+<!-- Back to top -->
+<button id="back-to-top" class="back-to-top" title="回到顶部">↑</button>
+
+<script src="js/lunar.js"></script>
+<script src="js/bazi.js"></script>
+<script src="js/ziwei.js"></script>
+<script src="js/meihua.js"></script>
+<script src="js/fengshui.js"></script>
+<script src="js/lingqian.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
