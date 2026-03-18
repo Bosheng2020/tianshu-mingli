@@ -43,7 +43,11 @@ db.exec(`
 
 // ===== Middleware =====
 app.use(express.json());
-app.use(express.static(__dirname)); // Serve static files (index.html, css/, js/)
+// Static files — exclude /api/ routes so they hit Express handlers first
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  express.static(__dirname)(req, res, next);
+});
 
 // ===== Helper: Generate 6-digit code =====
 function genCode() {
