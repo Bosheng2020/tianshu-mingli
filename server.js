@@ -50,6 +50,66 @@ app.use((req, res, next) => {
   express.static(__dirname)(req, res, next);
 });
 
+// ===== Analytics: 访问统计 + 生辰记录 =====
+const fs = require('fs');
+const LOG_FILE = path.join(__dirname, 'analytics.jsonl');
+const stats = { totalVisits: 0, totalPaipan: 0, features: {}, startTime: new Date().toISOString() };
+
+function getClientIP(req) {
+  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+    req.headers['x-real-ip'] || req.connection?.remoteAddress || 'unknown';
+}
+
+function logEvent(type, data, req) {
+  const entry = {
+    time: new Date().toISOString(),
+    type: type,
+    ip: getClientIP(req),
+    ua: (req.headers['user-agent'] || '').substring(0, 150),
+    ...data
+  };
+  try { fs.appendFileSync(LOG_FILE, JSON.stringify(entry) + '\n'); } catch(e) {}
+  return entry;
+}
+
+// Track page visits
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path === '/index.html') {
+    stats.totalVisits++;
+    logEvent('visit', {}, req);
+  }
+  next();
+});
+
+// API: Record paipan (排盘记录)
+app.post('/api/record', (req, res) => {
+  const { year, month, day, hour, minute, city, province, gender, feature } = req.body || {};
+  stats.totalPaipan++;
+  stats.features[feature || 'bazi'] = (stats.features[feature || 'bazi'] || 0) + 1;
+  logEvent('paipan', { year, month, day, hour, minute, city, province, gender, feature }, req);
+  res.json({ ok: true });
+});
+
+// API: Get stats (简单密码保护)
+app.get('/api/stats', (req, res) => {
+  if (req.query.key !== 'tianshu2026') return res.status(403).json({ error: '无权访问' });
+
+  // Read recent logs
+  let recentLogs = [];
+  try {
+    const lines = fs.readFileSync(LOG_FILE, 'utf8').trim().split('\n').slice(-100);
+    recentLogs = lines.map(l => { try { return JSON.parse(l); } catch(e) { return null; } }).filter(Boolean);
+  } catch(e) {}
+
+  res.json({
+    stats: stats,
+    uptime: process.uptime(),
+    recentPaipan: recentLogs.filter(l => l.type === 'paipan').slice(-50),
+    recentVisits: recentLogs.filter(l => l.type === 'visit').length,
+    totalLogs: recentLogs.length
+  });
+});
+
 // ===== Helper: Generate 6-digit code =====
 function genCode() {
   return String(Math.floor(100000 + Math.random() * 900000));

@@ -6,3 +6,4 @@ tianshu.db
 *.log
 tianshu.db-shm
 tianshu.db-wal
+analytics.jsonl

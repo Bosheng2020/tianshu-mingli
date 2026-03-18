@@ -527,6 +527,19 @@
             '<span class="tst-detail"> ' + tst.desc + '</span>' + lunarInfo +
             (tst.dayOffset ? '<span class="tst-warn">真太阳时跨日，实际日期为' + sM + '月' + sD + '日</span>' : '');
 
+        // Record analytics (async, non-blocking)
+        try {
+            var provEl = document.getElementById('birth-province');
+            fetch('/api/record', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    year: year, month: month, day: day, hour: hour, minute: minute,
+                    province: provEl ? provEl.value : '', city: cityOpt ? cityOpt.textContent : '',
+                    gender: gender, feature: 'paipan'
+                })
+            }).catch(function(){});
+        } catch(e) {}
+
         // Loading
         ['bazi-result','ziwei-result','fengshui-result'].forEach(function(id) {
             document.getElementById(id).innerHTML = '<div class="loading">排盘中</div>';
@@ -637,6 +650,7 @@
         // Shake animation delay for ritual feel
         setTimeout(function() {
             var qian = LingQian.drawQian();
+            try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'lingqian',result:qian.n})}); } catch(e) {}
             resultDiv.innerHTML = LingQian.renderQian(qian);
             btn.disabled = false; btn.textContent = '再抽一签';
             resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -662,6 +676,7 @@
                 setTimeout(doThrow, 600);
             } else {
                 resultDiv.innerHTML = LingQian.renderJiao(results, question);
+                try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'jiaobei',results:results})}); } catch(e) {}
                 btn.disabled = false; btn.textContent = '再掷一次';
                 resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
