@@ -423,23 +423,32 @@
             minSel.appendChild(opt5);
         }
 
+        // Province + City cascade
+        var provSel = document.getElementById('birth-province');
         var citySel = document.getElementById('birth-city');
-        var groups = {};
+        var provGroups = {};
+        var provOrder = [];
         CITIES.forEach(function(c) {
-            if (!groups[c.province]) groups[c.province] = [];
-            groups[c.province].push(c);
+            if (!provGroups[c.province]) { provGroups[c.province] = []; provOrder.push(c.province); }
+            provGroups[c.province].push(c);
         });
-        for (var prov in groups) {
-            var og = document.createElement('optgroup');
-            og.label = prov;
-            groups[prov].forEach(function(c) {
+        provOrder.forEach(function(prov) {
+            var o = document.createElement('option');
+            o.value = prov; o.textContent = prov;
+            provSel.appendChild(o);
+        });
+        function updateCities() {
+            var prov = provSel.value;
+            citySel.innerHTML = '';
+            (provGroups[prov] || []).forEach(function(c) {
                 var o = document.createElement('option');
                 o.value = c.lng; o.textContent = c.name;
-                og.appendChild(o);
+                citySel.appendChild(o);
             });
-            citySel.appendChild(og);
         }
-        citySel.value = '116.41';
+        provSel.addEventListener('change', updateCities);
+        provSel.value = '北京';
+        updateCities();
     }
     populateSelectors();
 

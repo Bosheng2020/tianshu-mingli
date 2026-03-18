@@ -25,7 +25,7 @@ header h1{font-family:var(--font-h);font-weight:900;font-size:clamp(1.8rem,4.5vw
 
 /* ===== BIRTH BAR ===== */
 .birth-info-bar{background:linear-gradient(160deg,#1e1e30,#2a2040,#1e1e30);padding:16px 0;border-bottom:1px solid rgba(197,146,46,.25);color:var(--cream)}
-.birth-row{display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:10px;align-items:end}
+.birth-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto;gap:10px;align-items:end}
 .birth-group{display:flex;flex-direction:column;gap:4px}
 .birth-group-small{display:flex;flex-direction:column;gap:4px}
 .birth-group-gender{display:flex;flex-direction:column;gap:4px}
@@ -139,9 +139,12 @@ select:focus,input:focus{outline:none;border-color:var(--vermillion);box-shadow:
 .star.main-star{color:var(--vermillion);font-weight:700;font-family:var(--font-h)}
 .star.aux-star{color:var(--ink-light);font-size:.68rem}
 .star.lucky-star{color:var(--jade);font-size:.7rem;font-weight:600}
-.star.unlucky-star{color:#b71c1c;font-size:.68rem;opacity:.75}
-.star.adj-star{color:var(--gold);font-size:.65rem;font-style:italic}
+.star.unlucky-star{color:#1a1a1a;font-size:.7rem;font-weight:900;text-shadow:0 0 1px rgba(0,0,0,.3)}
+.star.adj-star{color:var(--gold);font-size:.65rem}
+.star.adj-star-bad{color:#555;font-size:.65rem;font-weight:700}
 .star sub{font-size:.55rem;opacity:.5;vertical-align:baseline}
+/* 四化 highlight in grid */
+.sihua-tag.hua-ji{background:#1a1a1a;font-weight:900}
 .palace-sihua{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px}
 .sihua-tag{font-size:.62rem;padding:1px 5px;border-radius:3px;font-weight:600;color:#fff}
 .hua-lu{background:var(--jade)}.hua-quan{background:var(--gold)}.hua-ke{background:var(--water)}.hua-ji{background:var(--fire)}
@@ -267,9 +270,7 @@ footer{text-align:center;padding:24px 20px;color:var(--ink-light);font-size:.82r
   /* Birth bar — 2-column grid on mobile */
   .birth-info-bar{padding:10px 0}
   .birth-row{grid-template-columns:1fr 1fr;gap:8px}
-  .birth-group:nth-child(3){grid-column:1 / -1} /* 出生地点 full width */
-  .birth-group-gender{} /* stays in grid flow */
-  .birth-group-btn{grid-column:1 / -1} /* 按钮 full width */
+  .birth-group-btn{grid-column:1 / -1}
   .date-inputs select,.time-inputs select{font-size:.82rem;padding:7px 4px}
   .birth-info-bar select{padding:7px 4px;font-size:.82rem}
   .birth-info-bar .btn{width:100%;padding:10px}

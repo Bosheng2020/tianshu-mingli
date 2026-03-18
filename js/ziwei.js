@@ -1143,19 +1143,49 @@ const ZiWei = (function () {
           html += '<div class="ziwei-cell' + (isMing?' ming-palace':'') + (isBody&&!isMing?' shen-palace':'') + '">';
           html += '<div class="palace-header"><span class="palace-name">' + p.name + (isMing&&isBody?'(命身)':isBody?'(身)':'') + '</span>';
           html += '<span class="palace-branch">' + (p.heavenlyStem||'') + (p.earthlyBranch||'') + '</span></div>';
+          // Stars rendering — show ALL stars
+          var goodMinor = ['文昌','文曲','左辅','右弼','天魁','天钺','禄存','天马'];
+          var badMinor = ['擎羊','陀罗','火星','铃星','地空','地劫'];
+          var badAdj = ['天刑','天哭','天虚','阴煞','孤辰','寡宿','破碎','截路','旬空','空亡'];
+
           html += '<div class="palace-stars">';
+          // 1. Major stars (14主星) with brightness + mutagen
           (p.majorStars||[]).forEach(function(s) {
             if (!s.name) return;
-            html += '<span class="star main-star">' + s.name + (s.brightness?'<sub>'+s.brightness+'</sub>':'') + '</span>';
-            if (s.mutagen) { var hc = s.mutagen.indexOf('忌')>=0?'hua-ji':s.mutagen.indexOf('禄')>=0?'hua-lu':s.mutagen.indexOf('权')>=0?'hua-quan':'hua-ke'; html += '<span class="sihua-tag '+hc+'">' + s.mutagen + '</span> '; } else html += ' ';
+            html += '<span class="star main-star">' + s.name;
+            if (s.brightness) html += '<sub>' + s.brightness + '</sub>';
+            html += '</span>';
+            if (s.mutagen) {
+              var hc = s.mutagen.indexOf('忌')>=0?'hua-ji':s.mutagen.indexOf('禄')>=0?'hua-lu':s.mutagen.indexOf('权')>=0?'hua-quan':'hua-ke';
+              html += '<span class="sihua-tag '+hc+'">' + s.mutagen + '</span> ';
+            } else html += ' ';
           });
-          var goodStars = ['文昌','文曲','左辅','右弼','天魁','天钺','禄存','天马'];
-          var badStars = ['擎羊','陀罗','火星','铃星','地空','地劫'];
-          (p.minorStars||[]).forEach(function(s) { if (!s.name) return; var cls = goodStars.indexOf(s.name)>=0?'lucky-star':badStars.indexOf(s.name)>=0?'unlucky-star':'aux-star'; html += '<span class="star '+cls+'">' + s.name + '</span> '; });
-          var keyAdj = ['红鸾','天喜','咸池','天姚','华盖','天刑','龙池','凤阁','天官','天福','天德','月德','孤辰','寡宿'];
-          (p.adjectiveStars||[]).forEach(function(s) { if (s.name && keyAdj.indexOf(s.name)>=0) html += '<span class="star adj-star">' + s.name + '</span> '; });
+
+          // 2. Minor stars (辅星) — good=green, bad=BLACK BOLD
+          (p.minorStars||[]).forEach(function(s) {
+            if (!s.name) return;
+            var cls = goodMinor.indexOf(s.name)>=0 ? 'lucky-star' : badMinor.indexOf(s.name)>=0 ? 'unlucky-star' : 'aux-star';
+            html += '<span class="star ' + cls + '">' + s.name + '</span>';
+            if (s.mutagen) {
+              var hc = s.mutagen.indexOf('忌')>=0?'hua-ji':s.mutagen.indexOf('禄')>=0?'hua-lu':s.mutagen.indexOf('权')>=0?'hua-quan':'hua-ke';
+              html += '<span class="sihua-tag '+hc+'">' + s.mutagen + '</span>';
+            }
+            html += ' ';
+          });
+
+          // 3. ALL adjective stars (杂曜) — bad ones get dark styling
+          (p.adjectiveStars||[]).forEach(function(s) {
+            if (!s.name) return;
+            var isBad = badAdj.indexOf(s.name) >= 0;
+            html += '<span class="star ' + (isBad ? 'adj-star-bad' : 'adj-star') + '">' + s.name + '</span> ';
+          });
           html += '</div>';
-          if (p.changsheng12) html += '<div style="font-size:.55rem;color:var(--ink-light);margin-top:1px">' + p.changsheng12 + '</div>';
+
+          // 长生12神 + 博士12神
+          var extraInfo = [];
+          if (p.changsheng12) extraInfo.push(p.changsheng12);
+          if (p.boshi12) extraInfo.push(p.boshi12);
+          if (extraInfo.length) html += '<div style="font-size:.55rem;color:var(--ink-light);margin-top:1px">' + extraInfo.join(' ') + '</div>';
           if (p.decadal && p.decadal.range) { var dr=p.decadal.range; html += '<div class="palace-dayun' + (currentAge>=dr[0]&&currentAge<=dr[1]?' current-dayun':'') + '">' + dr[0]+'-'+dr[1] + '</div>'; }
           html += '</div>';
         } else {
@@ -1211,13 +1241,77 @@ const ZiWei = (function () {
     html += '</div>';
 
     // ===== 四化 =====
-    html += '<div class="interp-card"><h3>四化飞星</h3>';
+    // ===== 生年四化（三合派+飞星派） =====
+    html += '<div class="interp-card"><h3>生年四化（命盘四化）</h3>';
+    html += '<p style="font-size:.84rem;color:var(--ink-light)">生年四化由出生年天干决定，是命盘中最核心的动态因素。禄权科忌四颗化星分布在不同宫位，揭示此人一生的核心能量走向。</p>';
+    var huaLabels = ['化禄','化权','化科','化忌'];
+    var huaColors = ['var(--jade)','var(--gold)','var(--water)','#1a1a1a'];
+    var mutagenStars = [];
     pals.forEach(function(p) {
       (p.majorStars||[]).concat(p.minorStars||[]).forEach(function(s) {
-        if (!s.mutagen) return;
-        var hd = SIHUA_EFFECTS[s.mutagen]; var pd = hd ? hd[p.name] : '';
-        html += '<p><strong>' + s.name + ' ' + s.mutagen + '</strong> 在' + p.name + (pd ? ' — ' + pd : '') + '</p>';
+        if (s.mutagen) mutagenStars.push({star:s.name, hua:s.mutagen, palace:p.name});
       });
+    });
+    // Ensure all 4 are shown
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0">';
+    huaLabels.forEach(function(label, idx) {
+      var found = mutagenStars.find(function(m){ return m.hua === label; });
+      var bg = idx === 3 ? 'rgba(26,26,26,.06)' : idx === 0 ? 'rgba(45,143,111,.06)' : idx === 1 ? 'rgba(197,146,46,.06)' : 'rgba(21,101,192,.06)';
+      html += '<div style="text-align:center;padding:10px 6px;border-radius:8px;background:' + bg + ';border:1px solid ' + (idx===3?'#1a1a1a':'var(--border)') + '">';
+      html += '<div style="font-size:.75rem;color:' + huaColors[idx] + ';font-weight:700">' + label + '</div>';
+      html += '<div style="font-size:1rem;font-weight:700;font-family:var(--font-h);margin:4px 0">' + (found ? found.star : '—') + '</div>';
+      html += '<div style="font-size:.72rem;color:var(--ink-light)">' + (found ? found.palace + '宫' : '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    // Detailed explanation
+    mutagenStars.forEach(function(m) {
+      var hd = SIHUA_EFFECTS[m.hua]; var pd = hd ? hd[m.palace] : '';
+      html += '<p><strong style="color:' + huaColors[huaLabels.indexOf(m.hua)] + '">' + m.star + ' ' + m.hua + '</strong> 在' + m.palace + '宫' + (pd ? ' — ' + pd : '') + '</p>';
+    });
+
+    // 飞星派：宫干四化（每宫天干飞出的四化）
+    html += '<h4>飞星四化（宫干飞化）</h4>';
+    html += '<p style="font-size:.84rem;color:var(--ink-light)">飞星派的核心：每个宫位的天干各自飞出禄权科忌四化到其他宫位，形成宫与宫之间的能量关系网络。</p>';
+
+    // 天干四化表
+    var SIHUA_TABLE = {
+      '甲':['廉贞','破军','武曲','太阳'],'乙':['天机','天梁','紫微','太阴'],
+      '丙':['天同','天机','文昌','廉贞'],'丁':['太阴','天同','天机','巨门'],
+      '戊':['贪狼','太阴','右弼','天机'],'己':['武曲','贪狼','天梁','文曲'],
+      '庚':['太阳','武曲','太阴','天同'],'辛':['巨门','太阳','文曲','文昌'],
+      '壬':['天梁','紫微','左辅','武曲'],'癸':['破军','巨门','太阴','贪狼']
+    };
+
+    // Show key palace flying stars (命宫, 官禄, 财帛, 夫妻)
+    var keyFlyPalaces = ['命宫','官禄','财帛','夫妻','福德','迁移'];
+    keyFlyPalaces.forEach(function(palaceName) {
+      var pal = pals.find(function(p){return p.name === palaceName});
+      if (!pal || !pal.heavenlyStem) return;
+      var stem = pal.heavenlyStem;
+      var sihuaRow = SIHUA_TABLE[stem];
+      if (!sihuaRow) return;
+
+      html += '<details class="yearly-detail"><summary class="yearly-summary">';
+      html += '<span class="yr-year">' + palaceName + '宫</span>';
+      html += '<span class="yr-gz">' + stem + '干</span>';
+      html += '<span style="font-size:.75rem;color:var(--ink-light)">飞 ' + sihuaRow.map(function(s,i){return s+huaLabels[i].charAt(1)}).join(' ') + '</span>';
+      html += '</summary><div class="yearly-content">';
+
+      // Find where each star lands
+      sihuaRow.forEach(function(starName, idx) {
+        var landPalace = '';
+        pals.forEach(function(pp) {
+          (pp.majorStars||[]).concat(pp.minorStars||[]).forEach(function(ss) {
+            if (ss.name === starName) landPalace = pp.name;
+          });
+        });
+        if (landPalace) {
+          var isSelf = (landPalace === palaceName);
+          html += '<p>' + '<strong style="color:' + huaColors[idx] + '">' + starName + ' ' + huaLabels[idx] + '</strong> → ' + landPalace + '宫' + (isSelf ? ' <span style="color:var(--vermillion);font-weight:700">（自化' + huaLabels[idx].charAt(1) + '）</span>' : '') + '</p>';
+        }
+      });
+      html += '</div></details>';
     });
     html += '</div>';
 
