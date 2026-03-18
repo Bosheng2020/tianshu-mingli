@@ -1156,8 +1156,10 @@ const ZiWei = (function () {
             if (s.brightness) html += '<sub>' + s.brightness + '</sub>';
             html += '</span>';
             if (s.mutagen) {
-              var hc = s.mutagen.indexOf('忌')>=0?'hua-ji':s.mutagen.indexOf('禄')>=0?'hua-lu':s.mutagen.indexOf('权')>=0?'hua-quan':'hua-ke';
-              html += '<span class="sihua-tag '+hc+'">' + s.mutagen + '</span> ';
+              var mt = s.mutagen;
+              var hc = (mt==='忌'||mt==='化忌')?'hua-ji':(mt==='禄'||mt==='化禄')?'hua-lu':(mt==='权'||mt==='化权')?'hua-quan':'hua-ke';
+              var mtLabel = mt.length===1 ? '化'+mt : mt;
+              html += '<span class="sihua-tag '+hc+'">' + mtLabel + '</span> ';
             } else html += ' ';
           });
 
@@ -1167,8 +1169,9 @@ const ZiWei = (function () {
             var cls = goodMinor.indexOf(s.name)>=0 ? 'lucky-star' : badMinor.indexOf(s.name)>=0 ? 'unlucky-star' : 'aux-star';
             html += '<span class="star ' + cls + '">' + s.name + '</span>';
             if (s.mutagen) {
-              var hc = s.mutagen.indexOf('忌')>=0?'hua-ji':s.mutagen.indexOf('禄')>=0?'hua-lu':s.mutagen.indexOf('权')>=0?'hua-quan':'hua-ke';
-              html += '<span class="sihua-tag '+hc+'">' + s.mutagen + '</span>';
+              var mt2 = s.mutagen;
+              var hc2 = (mt2==='忌'||mt2==='化忌')?'hua-ji':(mt2==='禄'||mt2==='化禄')?'hua-lu':(mt2==='权'||mt2==='化权')?'hua-quan':'hua-ke';
+              html += '<span class="sihua-tag '+hc2+'">' + (mt2.length===1?'化'+mt2:mt2) + '</span>';
             }
             html += ' ';
           });
@@ -1244,7 +1247,8 @@ const ZiWei = (function () {
     // ===== 生年四化（三合派+飞星派） =====
     html += '<div class="interp-card"><h3>生年四化（命盘四化）</h3>';
     html += '<p style="font-size:.84rem;color:var(--ink-light)">生年四化由出生年天干决定，是命盘中最核心的动态因素。禄权科忌四颗化星分布在不同宫位，揭示此人一生的核心能量走向。</p>';
-    var huaLabels = ['化禄','化权','化科','化忌'];
+    var huaFull = ['化禄','化权','化科','化忌'];
+    var huaShort = ['禄','权','科','忌'];
     var huaColors = ['var(--jade)','var(--gold)','var(--water)','#1a1a1a'];
     var mutagenStars = [];
     pals.forEach(function(p) {
@@ -1252,22 +1256,26 @@ const ZiWei = (function () {
         if (s.mutagen) mutagenStars.push({star:s.name, hua:s.mutagen, palace:p.name});
       });
     });
-    // Ensure all 4 are shown
+    // 四格卡片显示
     html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0">';
-    huaLabels.forEach(function(label, idx) {
-      var found = mutagenStars.find(function(m){ return m.hua === label; });
-      var bg = idx === 3 ? 'rgba(26,26,26,.06)' : idx === 0 ? 'rgba(45,143,111,.06)' : idx === 1 ? 'rgba(197,146,46,.06)' : 'rgba(21,101,192,.06)';
-      html += '<div style="text-align:center;padding:10px 6px;border-radius:8px;background:' + bg + ';border:1px solid ' + (idx===3?'#1a1a1a':'var(--border)') + '">';
-      html += '<div style="font-size:.75rem;color:' + huaColors[idx] + ';font-weight:700">' + label + '</div>';
-      html += '<div style="font-size:1rem;font-weight:700;font-family:var(--font-h);margin:4px 0">' + (found ? found.star : '—') + '</div>';
-      html += '<div style="font-size:.72rem;color:var(--ink-light)">' + (found ? found.palace + '宫' : '') + '</div>';
+    huaShort.forEach(function(shortLabel, idx) {
+      var found = mutagenStars.find(function(m){ return m.hua === shortLabel || m.hua === huaFull[idx]; });
+      var bg = idx === 3 ? 'rgba(26,26,26,.08)' : idx === 0 ? 'rgba(45,143,111,.06)' : idx === 1 ? 'rgba(197,146,46,.06)' : 'rgba(21,101,192,.06)';
+      var borderC = idx === 3 ? '#1a1a1a' : 'var(--border)';
+      html += '<div style="text-align:center;padding:12px 6px;border-radius:8px;background:' + bg + ';border:1px solid ' + borderC + '">';
+      html += '<div style="font-size:.78rem;color:' + huaColors[idx] + ';font-weight:700">' + huaFull[idx] + '</div>';
+      html += '<div style="font-size:1.2rem;font-weight:900;font-family:var(--font-h);margin:6px 0;color:' + huaColors[idx] + '">' + (found ? found.star : '—') + '</div>';
+      html += '<div style="font-size:.78rem;color:var(--ink-light)">' + (found ? found.palace + '宫' : '') + '</div>';
       html += '</div>';
     });
     html += '</div>';
-    // Detailed explanation
+    // 逐条解读
     mutagenStars.forEach(function(m) {
-      var hd = SIHUA_EFFECTS[m.hua]; var pd = hd ? hd[m.palace] : '';
-      html += '<p><strong style="color:' + huaColors[huaLabels.indexOf(m.hua)] + '">' + m.star + ' ' + m.hua + '</strong> 在' + m.palace + '宫' + (pd ? ' — ' + pd : '') + '</p>';
+      var idx = huaShort.indexOf(m.hua); if (idx < 0) idx = huaFull.indexOf(m.hua);
+      var fullLabel = idx >= 0 ? huaFull[idx] : m.hua;
+      var color = idx >= 0 ? huaColors[idx] : 'var(--ink)';
+      var hd = SIHUA_EFFECTS[fullLabel]; var pd = hd ? hd[m.palace] : '';
+      html += '<p><strong style="color:' + color + '">' + m.star + ' ' + fullLabel + '</strong> 在' + m.palace + '宫' + (pd ? ' — ' + pd : '') + '</p>';
     });
 
     // 飞星派：宫干四化（每宫天干飞出的四化）
