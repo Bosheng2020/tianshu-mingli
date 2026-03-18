@@ -1303,7 +1303,7 @@ const ZiWei = (function () {
       html += '<details class="yearly-detail"><summary class="yearly-summary">';
       html += '<span class="yr-year">' + palaceName + '宫</span>';
       html += '<span class="yr-gz">' + stem + '干</span>';
-      html += '<span style="font-size:.75rem;color:var(--ink-light)">飞 ' + sihuaRow.map(function(s,i){return s+huaLabels[i].charAt(1)}).join(' ') + '</span>';
+      html += '<span style="font-size:.75rem;color:var(--ink-light)">飞 ' + sihuaRow.map(function(s,i){return s+huaFull[i].charAt(1)}).join(' ') + '</span>';
       html += '</summary><div class="yearly-content">';
 
       // Find where each star lands
@@ -1316,7 +1316,7 @@ const ZiWei = (function () {
         });
         if (landPalace) {
           var isSelf = (landPalace === palaceName);
-          html += '<p>' + '<strong style="color:' + huaColors[idx] + '">' + starName + ' ' + huaLabels[idx] + '</strong> → ' + landPalace + '宫' + (isSelf ? ' <span style="color:var(--vermillion);font-weight:700">（自化' + huaLabels[idx].charAt(1) + '）</span>' : '') + '</p>';
+          html += '<p>' + '<strong style="color:' + huaColors[idx] + '">' + starName + ' ' + huaFull[idx] + '</strong> → ' + landPalace + '宫' + (isSelf ? ' <span style="color:var(--vermillion);font-weight:700">（自化' + huaFull[idx].charAt(1) + '）</span>' : '') + '</p>';
         }
       });
       html += '</div></details>';
