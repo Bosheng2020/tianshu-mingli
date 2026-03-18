@@ -10,7 +10,7 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
-const PORT = 3888;
+const PORT = process.env.PORT || 3888;
 
 // ===== Database Setup =====
 const db = new Database(path.join(__dirname, 'tianshu.db'));
