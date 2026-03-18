@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天枢命理 — 后台数据</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.header{background:linear-gradient(135deg,#1e1b4b,#312e81);padding:24px;text-align:center;border-bottom:2px solid #6366f1}
+.header h1{font-size:1.5rem;color:#a5b4fc;letter-spacing:.1em}
+.header p{font-size:.85rem;color:#818cf8;margin-top:4px}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;text-align:center}
+.stat-num{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:.82rem;color:#94a3b8;margin-top:4px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:20px}
+.card h2{font-size:1.1rem;color:#a5b4fc;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #334155}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th{text-align:left;padding:10px 12px;background:#0f172a;color:#94a3b8;font-weight:600;position:sticky;top:0}
+td{padding:8px 12px;border-top:1px solid #1e293b}
+tr:hover td{background:#334155}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:600}
+.tag-paipan{background:#312e81;color:#a5b4fc}
+.tag-lingqian{background:#7c2d12;color:#fdba74}
+.tag-jiaobei{background:#1e3a5f;color:#7dd3fc}
+.tag-visit{background:#1a2e1a;color:#86efac}
+.ip-loc{font-size:.75rem;color:#64748b}
+.time-col{font-size:.78rem;color:#64748b;white-space:nowrap}
+.birth-info{font-family:monospace;color:#c4b5fd}
+.loading{text-align:center;padding:60px;color:#64748b}
+.error{text-align:center;padding:40px;color:#f87171}
+.refresh-btn{background:#4f46e5;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:.85rem;transition:all .2s}
+.refresh-btn:hover{background:#6366f1;transform:translateY(-1px)}
+.feature-bar{display:flex;gap:4px;align-items:end;height:60px;margin-top:8px}
+.feature-bar-item{flex:1;background:linear-gradient(180deg,#6366f1,#4f46e5);border-radius:4px 4px 0 0;min-width:40px;position:relative;transition:all .3s}
+.feature-bar-item:hover{opacity:.8}
+.feature-bar-label{text-align:center;font-size:.7rem;color:#94a3b8;margin-top:4px}
+.gender-m{color:#60a5fa}
+.gender-f{color:#f472b6}
+@media(max-width:640px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .stat-num{font-size:1.8rem}
+  table{font-size:.75rem}
+  th,td{padding:6px 8px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>天枢命理 · 后台数据</h1>
+  <p id="uptime"></p>
+</div>
+
+<div class="container">
+  <div style="text-align:right;margin-bottom:16px">
+    <button class="refresh-btn" onclick="loadData()">刷新数据</button>
+  </div>
+
+  <!-- Stats cards -->
+  <div class="stats-grid" id="stats-grid"></div>
+
+  <!-- Feature usage chart -->
+  <div class="card" id="feature-card">
+    <h2>功能使用分布</h2>
+    <div id="feature-chart"></div>
+  </div>
+
+  <!-- Recent paipan records -->
+  <div class="card">
+    <h2>最近排盘记录</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>时间</th><th>类型</th><th>出生信息</th><th>地点</th><th>性别</th><th>IP / 地区</th>
+        </tr></thead>
+        <tbody id="paipan-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = '/api/stats?key=tianshu2026';
+var IP_API = 'https://ipapi.co/IP/json/'; // free IP geolocation
+
+var ipCache = {};
+
+function formatTime(t) {
+  if (!t) return '—';
+  var d = new Date(t);
+  return d.toLocaleDateString('zh-CN') + ' ' + d.toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+}
+
+function lookupIP(ip) {
+  if (!ip || ip === 'unknown' || ip === '::1' || ip === '127.0.0.1') return Promise.resolve('本地');
+  if (ipCache[ip]) return Promise.resolve(ipCache[ip]);
+  return fetch('https://ipapi.co/' + ip + '/json/')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var loc = (d.country_name || '') + (d.city ? ' ' + d.city : '');
+      ipCache[ip] = loc || ip;
+      return ipCache[ip];
+    })
+    .catch(function() { return ip; });
+}
+
+function loadData() {
+  document.getElementById('stats-grid').innerHTML = '<div class="stat-card"><div class="stat-label">加载中...</div></div>';
+  document.getElementById('paipan-table').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">加载中...</td></tr>';
+
+  fetch(API)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { document.getElementById('stats-grid').innerHTML = '<div class="error">' + data.error + '</div>'; return; }
+
+      // Uptime
+      var hrs = Math.floor(data.uptime / 3600);
+      var mins = Math.floor((data.uptime % 3600) / 60);
+      document.getElementById('uptime').textContent = '运行时间: ' + hrs + '小时' + mins + '分钟';
+
+      // Stats cards
+      var s = data.stats;
+      var features = s.features || {};
+      var totalFeatures = Object.values(features).reduce(function(a,b){return a+b}, 0);
+      document.getElementById('stats-grid').innerHTML =
+        '<div class="stat-card"><div class="stat-num">' + s.totalVisits + '</div><div class="stat-label">总访问量</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + s.totalPaipan + '</div><div class="stat-label">总排盘次数</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + (features.paipan || 0) + '</div><div class="stat-label">八字/紫微/风水</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + (features.lingqian || 0) + '</div><div class="stat-label">观音灵签</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + (features.jiaobei || 0) + '</div><div class="stat-label">掷筊问事</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + data.totalLogs + '</div><div class="stat-label">总日志条数</div></div>';
+
+      // Feature chart
+      var maxVal = Math.max(features.paipan||1, features.lingqian||1, features.jiaobei||1, 1);
+      var chartItems = [
+        {name:'排盘',val:features.paipan||0,color:'#6366f1'},
+        {name:'灵签',val:features.lingqian||0,color:'#f59e0b'},
+        {name:'掷筊',val:features.jiaobei||0,color:'#06b6d4'}
+      ];
+      var chartHtml = '<div class="feature-bar">';
+      chartItems.forEach(function(item) {
+        var h = Math.max(item.val / maxVal * 100, 5);
+        chartHtml += '<div style="flex:1;text-align:center"><div class="feature-bar-item" style="height:' + h + '%;background:' + item.color + '"></div><div class="feature-bar-label">' + item.name + '<br>' + item.val + '</div></div>';
+      });
+      chartHtml += '</div>';
+      document.getElementById('feature-chart').innerHTML = chartHtml;
+
+      // Paipan table
+      var records = (data.recentPaipan || []).reverse();
+      if (records.length === 0) {
+        document.getElementById('paipan-table').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#64748b">暂无记录</td></tr>';
+        return;
+      }
+
+      var tableHtml = '';
+      records.forEach(function(r, idx) {
+        var tag = r.feature === 'lingqian' ? '<span class="tag tag-lingqian">灵签</span>' :
+                  r.feature === 'jiaobei' ? '<span class="tag tag-jiaobei">掷筊</span>' :
+                  '<span class="tag tag-paipan">排盘</span>';
+        var birth = '';
+        if (r.year) birth = r.year + '-' + (r.month||'?') + '-' + (r.day||'?') + ' ' + (r.hour != null ? r.hour+':'+String(r.minute||0).padStart(2,'0') : '');
+        var location = (r.province||'') + (r.city ? ' '+r.city : '');
+        var genderHtml = r.gender === 'male' ? '<span class="gender-m">男</span>' : r.gender === 'female' ? '<span class="gender-f">女</span>' : '—';
+
+        tableHtml += '<tr id="row-' + idx + '">' +
+          '<td class="time-col">' + formatTime(r.time) + '</td>' +
+          '<td>' + tag + '</td>' +
+          '<td class="birth-info">' + (birth || '—') + '</td>' +
+          '<td>' + (location || '—') + '</td>' +
+          '<td>' + genderHtml + '</td>' +
+          '<td><span class="ip-text">' + (r.ip || '—') + '</span><br><span class="ip-loc" id="ip-' + idx + '">解析中...</span></td>' +
+          '</tr>';
+      });
+      document.getElementById('paipan-table').innerHTML = tableHtml;
+
+      // Async IP lookup
+      records.forEach(function(r, idx) {
+        lookupIP(r.ip).then(function(loc) {
+          var el = document.getElementById('ip-' + idx);
+          if (el) el.textContent = loc;
+        });
+      });
+    })
+    .catch(function(e) {
+      document.getElementById('stats-grid').innerHTML = '<div class="error">加载失败: ' + e.message + '</div>';
+    });
+}
+
+loadData();
+// Auto refresh every 30s
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>
