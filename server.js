@@ -176,6 +176,11 @@ app.post('/api/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// ===== Health check =====
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', time: new Date().toISOString(), uptime: process.uptime() });
+});
+
 // ===== Fallback: serve index.html =====
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -183,15 +188,17 @@ app.get('/', (req, res) => {
 
 // ===== Start Server =====
 app.listen(PORT, () => {
-  console.log(`
-╔══════════════════════════════════════════╗
-║         天枢命理 — 本地服务器            ║
-╠══════════════════════════════════════════╣
-║  地址: http://localhost:${PORT}              ║
-║  分享给他人: http://你的IP:${PORT}          ║
-╠══════════════════════════════════════════╣
-║  验证码会显示在这个控制台窗口            ║
-║  按 Ctrl+C 停止服务器                    ║
-╚══════════════════════════════════════════╝
-  `);
+  console.log(`天枢命理启动成功 → http://localhost:${PORT}`);
+
+  // Keep alive: self-ping every 14 minutes (prevents Render free tier sleep)
+  const RENDER_URL = process.env.RENDER_EXTERNAL_URL || '';
+  if (RENDER_URL) {
+    const https = require('https');
+    const http = require('http');
+    setInterval(() => {
+      const url = RENDER_URL + '/api/health';
+      (url.startsWith('https') ? https : http).get(url, () => {}).on('error', () => {});
+    }, 14 * 60 * 1000);
+    console.log(`[KeepAlive] 每14分钟自动ping ${RENDER_URL}`);
+  }
 });
