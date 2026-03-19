@@ -1319,10 +1319,34 @@ const ZiWei = (function () {
           '陷': '铃星落陷，内心焦虑不安、烦躁难眠。闷在心里的怒火找不到出口，容易抑郁或突然爆发。有暗疾、皮肤病、内分泌问题的风险。需特别注意心理健康，学会倾诉和释放情绪。'
         },
         '地空': {
-          base: '地空为空亡之星，主空虚、理想、灵感。入命者想象力丰富，思想超前，有哲学和宗教天赋。但也容易不切实际、好高骛远。财运上代表「有形之损」，钱财容易从看得见的途径流失。适合从事创意、宗教、哲学、科研等领域。'
+          base: '地空为空亡之星，主空虚、理想、灵感。想象力丰富，思想超前，有哲学和宗教天赋。但也容易不切实际、好高骛远。财运上代表「有形之损」，钱财容易从看得见的途径流失。',
+          '命宫': '地空入命宫：命主思想超前、想象力丰富，有哲学家和艺术家的特质。但容易想得多做得少，不接地气。适合创意、宗教、哲学、科研领域。不宜做需要脚踏实地的工作。',
+          '财帛': '地空入财帛宫：财运上有明显漏洞。钱财从看得见的途径流失——花钱大手大脚、投资亏损、借出去的钱收不回来。必须特别注意理财，避免冲动消费和高风险投资。',
+          '官禄': '地空入官禄宫：事业上有创新能力但难以落地。点子多但执行力不足，容易半途而废。适合做自由职业或创意行业，不适合按部就班的体制内工作。',
+          '夫妻': '地空入夫妻宫：感情上容易「空等一场」。对爱情有理想化倾向，现实中难以找到完全符合期望的伴侣。需降低期望值，学会在不完美中找到幸福。',
+          '福德': '地空入福德宫：精神世界空虚，容易感到孤独和迷茫。但也代表悟性极高，适合修行和灵性追求。',
+          '田宅': '地空入田宅宫：不动产运差，买房容易亏损。家中可能有破财现象，需注意家居安全。',
+          '迁移': '地空入迁移宫：外出运不佳，出门容易遇到意外。社交中常感格格不入。',
+          '疾厄': '地空入疾厄宫：注意精神类疾病和空虚感。容易失眠多梦，精神状态不稳定。',
+          '子女': '地空入子女宫：在子女方面可能有缘薄之象。投资也容易「竹篮打水一场空」。',
+          '兄弟': '地空入兄弟宫：与兄弟朋友关系疏淡。合伙经营容易亏空。',
+          '父母': '地空入父母宫：与父母缘分较薄，或父母对自己帮助有限。学业上容易中断。',
+          '仆役': '地空入交友宫：朋友关系看似热闹实则空虚。需防酒肉朋友。'
         },
         '地劫': {
-          base: '地劫为劫煞之星，主突变、损失、顿悟。入命者悟性极高但人生多波折。财运上代表「无形之损」，钱财在不知不觉中消耗。但地劫也主灵感和突破，很多创新者命中带地劫。适合从事IT、科技创新、艺术先锋等颠覆性领域。'
+          base: '地劫为劫煞之星，主突变、损失、顿悟。悟性极高但人生多波折。财运上代表「无形之损」，钱财在不知不觉中消耗。但地劫也主灵感和突破。',
+          '命宫': '地劫入命宫：命主悟性极高、直觉敏锐，有灵光一现的天赋。但人生起伏大，容易经历「归零重来」。适合科技创新、艺术先锋等颠覆性领域。很多成功的创业者命中带地劫。',
+          '财帛': '地劫入财帛宫：钱财在不知不觉中消耗。不是大笔亏损而是积少成多的损耗——小额消费不知不觉花掉大钱。需特别注意记账理财，控制隐形消费。',
+          '官禄': '地劫入官禄宫：事业上容易有突变和反转。可能经历裁员、公司倒闭等意外。但也能在危机中发现新机会。适合做风险较高的创新型工作。',
+          '夫妻': '地劫入夫妻宫：感情上可能经历突然的变故——闪婚闪离、感情骤变。需要用心经营，防止因一时冲动做出不可挽回的决定。',
+          '福德': '地劫入福德宫：精神上容易有突发的情绪波动。但也代表在逆境中能获得深刻的人生感悟。',
+          '田宅': '地劫入田宅宫：家中可能有突发变故。不动产投资需格外谨慎，防止突然贬值或纠纷。',
+          '迁移': '地劫入迁移宫：出门容易遇到突发状况。旅途中需防意外。但也代表在陌生环境中能有意外收获。',
+          '疾厄': '地劫入疾厄宫：健康上需防突发疾病和意外伤害。定期体检非常重要。',
+          '子女': '地劫入子女宫：在子女方面可能有意外之事。投资上防止突然亏损。',
+          '兄弟': '地劫入兄弟宫：与朋友兄弟的关系可能有突变。防止被朋友突然背叛或拖累。',
+          '父母': '地劫入父母宫：与长辈关系可能有突变。学业上可能因意外中断。',
+          '仆役': '地劫入交友宫：朋友圈可能突然变化。需防被人突然坑害。'
         },
         '红鸾': { base: '红鸾为正桃花星，主婚嫁喜事、异性缘佳。入命者容貌姣好、有异性魅力。逢流年红鸾时有结婚机会。' },
         '天喜': { base: '天喜为喜庆之星，主添丁之喜、好事临门。与红鸾对宫呼应，主人缘好、生活中喜事多。' },
@@ -1332,31 +1356,62 @@ const ZiWei = (function () {
         '咸池': { base: '咸池为沐浴桃花，主感情丰富、艺术天赋。入命者多情浪漫但也容易沉溺于感情。需注意节制。' }
       };
 
+      // 命宫辅星解读（根据亮度）
       html += '<h4>命宫辅星与杂曜解读</h4>';
       (ming.minorStars||[]).concat(ming.adjectiveStars||[]).forEach(function(s) {
         var interp = minorInterp[s.name];
         if (!interp) return;
         var b = s.brightness || '';
         var text = '';
-
-        // 有亮度数据的星，根据亮度给出具体解读
-        if (b && interp[b]) {
-          text = interp[b];
-        } else {
-          text = interp.base;
-        }
-
+        // 优先用亮度解读，其次用宫位解读（地空地劫），最后用基础解读
+        if (b && interp[b]) text = interp[b];
+        else if (interp['命宫']) text = interp['命宫'];
+        else text = interp.base;
         if (!text) return;
-
         var isBad = ['擎羊','陀罗','火星','铃星','地空','地劫'].indexOf(s.name) >= 0;
-        var isWarn = b === '陷' || b === '不';
+        var isWarn = b === '陷';
         var borderColor = isWarn ? '#dc2626' : isBad ? '#64748b' : 'var(--jade)';
         var bgColor = isWarn ? 'rgba(220,38,38,.04)' : isBad ? 'rgba(100,116,139,.04)' : 'rgba(45,143,111,.04)';
-
         html += '<div style="border-left:3px solid '+borderColor+';background:'+bgColor+';padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
         html += '<p><strong>' + s.name + (b ? '（'+b+'）' : '') + '</strong> ' + text + '</p>';
         html += '</div>';
       });
+
+      // 全盘地空地劫分析（不管在哪个宫都要解读）
+      var dikongPalace = null, dijiePalace = null;
+      pals.forEach(function(p) {
+        (p.minorStars||[]).forEach(function(s) {
+          if (s.name === '地空') dikongPalace = p;
+          if (s.name === '地劫') dijiePalace = p;
+        });
+      });
+      if (dikongPalace || dijiePalace) {
+        html += '<h4>地空地劫全盘分析</h4>';
+        html += '<p style="font-size:.84rem;color:var(--ink-light)">地空地劫是命盘中最特殊的煞星，不论落在哪个宫位都有重大影响。它们既代表损失和空虚，也代表灵感和超越。</p>';
+        if (dikongPalace) {
+          var dkInterp = minorInterp['地空'][dikongPalace.name] || minorInterp['地空'].base;
+          var isMingDK = dikongPalace.name === '命宫';
+          html += '<div style="border-left:3px solid #64748b;background:rgba(100,116,139,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
+          html += '<p><strong>地空在' + dikongPalace.name + '宫</strong>' + (isMingDK ? '' : ' (' + dikongPalace.heavenlyStem + dikongPalace.earthlyBranch + ')') + '</p>';
+          html += '<p>' + dkInterp + '</p>';
+          html += '</div>';
+        }
+        if (dijiePalace) {
+          var djInterp = minorInterp['地劫'][dijiePalace.name] || minorInterp['地劫'].base;
+          var isMingDJ = dijiePalace.name === '命宫';
+          html += '<div style="border-left:3px solid #64748b;background:rgba(100,116,139,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
+          html += '<p><strong>地劫在' + dijiePalace.name + '宫</strong>' + (isMingDJ ? '' : ' (' + dijiePalace.heavenlyStem + dijiePalace.earthlyBranch + ')') + '</p>';
+          html += '<p>' + djInterp + '</p>';
+          html += '</div>';
+        }
+        // 地空地劫同宫
+        if (dikongPalace && dijiePalace && dikongPalace.name === dijiePalace.name) {
+          html += '<div style="border-left:3px solid #dc2626;background:rgba(220,38,38,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
+          html += '<p><strong style="color:#dc2626">地空地劫同宫（' + dikongPalace.name + '）！</strong></p>';
+          html += '<p>空劫同宫是命盘中罕见且影响极大的组合。该宫位代表的领域会经历大起大落、从有到无再从无到有的轮回。但也代表此人在该领域有超越常人的悟性和突破能力。「置之死地而后生」是空劫同宫者的人生写照。</p>';
+          html += '</div>';
+        }
+      }
       html += '</div>';
     }
 
