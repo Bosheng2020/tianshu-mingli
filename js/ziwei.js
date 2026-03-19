@@ -1254,33 +1254,36 @@ const ZiWei = (function () {
       });
     });
 
-    html += '<script>';
-    html += 'var _palData=' + JSON.stringify(pals.map(function(p){return {name:p.name,stem:p.heavenlyStem,branch:p.earthlyBranch,isOrig:p.isOriginalPalace}})) + ';';
-    html += 'var _sihua=' + JSON.stringify(SIHUA_TBL) + ';';
-    html += 'var _starPal=' + JSON.stringify(starToPalace) + ';';
-    html += 'var _huaFull=["化禄","化权","化科","化忌"];';
-    html += 'var _huaColor=["#16a34a","#d97706","#2563eb","#dc2626"];';
-    html += 'window._toggleFlyingStar=function(el,idx){';
-    html += '  var panel=document.getElementById("flying-star-panel");';
-    html += '  var content=document.getElementById("flying-star-content");';
-    html += '  var p=_palData[idx]; if(!p||!p.stem)return;';
-    html += '  var row=_sihua[p.stem]; if(!row)return;';
-    // Remove active from all cells, add to clicked
-    html += '  document.querySelectorAll(".ziwei-cell").forEach(function(c){c.style.outline="none"});';
-    html += '  el.style.outline="2px solid var(--gold,#c5922e)";';
-    html += '  var h="<strong>"+p.name+"宫</strong>（"+p.stem+"干）飞星四化：<br><br>";';
-    html += '  row.forEach(function(star,i){';
-    html += '    var target=_starPal[star]||"未知";';
-    html += '    var isSelf=(target===p.name);';
-    html += '    h+="<span style=\\"color:"+_huaColor[i]+";font-weight:700\\">"+star+" "+_huaFull[i]+"</span> → <strong>"+target+"宫</strong>";';
-    html += '    if(isSelf) h+=" <span style=\\"background:#dc2626;color:#fff;padding:1px 6px;border-radius:3px;font-size:.75rem;font-weight:700\\">自化!</span>";';
-    html += '    h+="<br>";';
-    html += '  });';
-    html += '  content.innerHTML=h;';
-    html += '  panel.style.display="block";';
-    html += '  panel.scrollIntoView({behavior:"smooth",block:"nearest"});';
-    html += '};';
-    html += '<\/script>';
+    // Register flying star click handler directly (not via <script> tag)
+    var _palDataJSON = JSON.stringify(pals.map(function(p){return {name:p.name,stem:p.heavenlyStem,branch:p.earthlyBranch,isOrig:p.isOriginalPalace}}));
+    var _sihuaJSON = JSON.stringify(SIHUA_TBL);
+    var _starPalJSON = JSON.stringify(starToPalace);
+
+    window._fsData = { palData: JSON.parse(_palDataJSON), sihua: JSON.parse(_sihuaJSON), starPal: JSON.parse(_starPalJSON) };
+    window._toggleFlyingStar = function(el, idx) {
+      var panel = document.getElementById('flying-star-panel');
+      var content = document.getElementById('flying-star-content');
+      var d = window._fsData; if (!d) return;
+      var p = d.palData[idx]; if (!p || !p.stem) return;
+      var row = d.sihua[p.stem]; if (!row) return;
+      var huaFull = ['化禄','化权','化科','化忌'];
+      var huaColor = ['#16a34a','#d97706','#2563eb','#dc2626'];
+
+      document.querySelectorAll('.ziwei-cell').forEach(function(c){c.style.outline='none'});
+      el.style.outline = '2px solid #c5922e';
+
+      var h = '<strong>' + p.name + '宫</strong>（' + p.stem + '干）飞星四化：<br><br>';
+      row.forEach(function(star, i) {
+        var target = d.starPal[star] || '未知';
+        var isSelf = (target === p.name);
+        h += '<span style="color:'+huaColor[i]+';font-weight:700">' + star + ' ' + huaFull[i] + '</span> → <strong>' + target + '宫</strong>';
+        if (isSelf) h += ' <span style="background:#dc2626;color:#fff;padding:1px 6px;border-radius:3px;font-size:.75rem;font-weight:700">自化!</span>';
+        h += '<br>';
+      });
+      content.innerHTML = h;
+      panel.style.display = 'block';
+      panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    };
 
     // ===== 来因宫解读 =====
     var laiyinPalace = pals.find(function(p){return p.isOriginalPalace});
