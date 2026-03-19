@@ -1387,21 +1387,38 @@ const ZiWei = (function () {
       });
       if (dikongPalace || dijiePalace) {
         html += '<h4>地空地劫全盘分析</h4>';
-        html += '<p style="font-size:.84rem;color:var(--ink-light)">地空地劫是命盘中最特殊的煞星，不论落在哪个宫位都有重大影响。它们既代表损失和空虚，也代表灵感和超越。</p>';
+        html += '<p style="font-size:.84rem;color:var(--ink-light)">地空地劫是命盘中最特殊的煞星。与其他煞星不同，<strong>地空地劫没有庙旺落陷之分</strong>，无论在哪个宫位都带有空亡和劫夺的性质。它们的吉凶取决于所在宫位和同宫主星。</p>';
         if (dikongPalace) {
           var dkInterp = minorInterp['地空'][dikongPalace.name] || minorInterp['地空'].base;
-          var isMingDK = dikongPalace.name === '命宫';
+          // Check co-stars
+          var dkMajors = (dikongPalace.majorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name});
           html += '<div style="border-left:3px solid #64748b;background:rgba(100,116,139,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
-          html += '<p><strong>地空在' + dikongPalace.name + '宫</strong>' + (isMingDK ? '' : ' (' + dikongPalace.heavenlyStem + dikongPalace.earthlyBranch + ')') + '</p>';
+          html += '<p><strong>地空在' + dikongPalace.name + '宫</strong> (' + dikongPalace.heavenlyStem + dikongPalace.earthlyBranch + ')';
+          if (dkMajors.length) html += ' — 同宫主星：' + dkMajors.join('、');
+          html += '</p>';
           html += '<p>' + dkInterp + '</p>';
+          if (dkMajors.length) {
+            var hasCai = ['武曲','天府','太阴','禄存'].some(function(s){return dkMajors.indexOf(s)>=0});
+            if (hasCai) html += '<p style="color:#dc2626">注意：地空与财星（' + dkMajors.join('、') + '）同宫，财运受损较重。有财难聚，投资需格外谨慎。</p>';
+            var hasGui = ['紫微','天府','天梁','天相'].some(function(s){return dkMajors.indexOf(s)>=0});
+            if (hasGui) html += '<p>地空与贵星同宫，虽有贵气但难以完全发挥。如同「有地位但不在意」，反而更适合做精神层面的追求。</p>';
+          }
           html += '</div>';
         }
         if (dijiePalace) {
           var djInterp = minorInterp['地劫'][dijiePalace.name] || minorInterp['地劫'].base;
-          var isMingDJ = dijiePalace.name === '命宫';
+          var djMajors = (dijiePalace.majorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name});
           html += '<div style="border-left:3px solid #64748b;background:rgba(100,116,139,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
-          html += '<p><strong>地劫在' + dijiePalace.name + '宫</strong>' + (isMingDJ ? '' : ' (' + dijiePalace.heavenlyStem + dijiePalace.earthlyBranch + ')') + '</p>';
+          html += '<p><strong>地劫在' + dijiePalace.name + '宫</strong> (' + dijiePalace.heavenlyStem + dijiePalace.earthlyBranch + ')';
+          if (djMajors.length) html += ' — 同宫主星：' + djMajors.join('、');
+          html += '</p>';
           html += '<p>' + djInterp + '</p>';
+          if (djMajors.length) {
+            var djHasCai = ['武曲','天府','太阴','禄存'].some(function(s){return djMajors.indexOf(s)>=0});
+            if (djHasCai) html += '<p style="color:#dc2626">注意：地劫与财星（' + djMajors.join('、') + '）同宫，钱财容易突然损失。需防投资爆雷、突发破财。</p>';
+            var djHasGuan = ['紫微','太阳','天府'].some(function(s){return djMajors.indexOf(s)>=0});
+            if (djHasGuan) html += '<p>地劫与贵星同宫，贵气受劫但不至于全无。在挫折中更能激发突破潜力，「不破不立」。</p>';
+          }
           html += '</div>';
         }
         // 地空地劫同宫
