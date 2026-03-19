@@ -1167,7 +1167,7 @@ const ZiWei = (function () {
           (p.minorStars||[]).forEach(function(s) {
             if (!s.name) return;
             var cls = goodMinor.indexOf(s.name)>=0 ? 'lucky-star' : badMinor.indexOf(s.name)>=0 ? 'unlucky-star' : 'aux-star';
-            html += '<span class="star ' + cls + '">' + s.name + '</span>';
+            html += '<span class="star ' + cls + '">' + s.name + (s.brightness ? '<sub>' + s.brightness + '</sub>' : '') + '</span>';
             if (s.mutagen) {
               var mt2 = s.mutagen;
               var hc2 = (mt2==='忌'||mt2==='化忌')?'hua-ji':(mt2==='禄'||mt2==='化禄')?'hua-lu':(mt2==='权'||mt2==='化权')?'hua-quan':'hua-ke';
