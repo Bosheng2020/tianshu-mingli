@@ -149,6 +149,9 @@ select:focus,input:focus{outline:none;border-color:var(--vermillion);box-shadow:
 .sihua-tag{font-size:.62rem;padding:1px 5px;border-radius:3px;font-weight:600;color:#fff}
 .hua-lu{background:var(--jade)}.hua-quan{background:var(--gold)}.hua-ke{background:var(--water)}.hua-ji{background:var(--fire)}
 .palace-dayun{position:absolute;bottom:3px;right:6px;font-size:.6rem;color:var(--ink-light);opacity:.7;font-family:var(--font-h)}
+.ziwei-cell{cursor:pointer;transition:outline .15s,background .15s}
+.ziwei-cell:active{background:#f0ece6}
+.ziwei-cell.laiyin-palace{background:rgba(197,146,46,.06);border-color:rgba(197,146,46,.3)}
 .palace-dayun.current-dayun{color:var(--vermillion);opacity:1;font-weight:700}
 .center-title{font-family:var(--font-h);font-weight:700;font-size:1rem;color:var(--vermillion)}
 .center-subtitle{font-family:var(--font-h);font-weight:600;font-size:.8rem;color:var(--vermillion);margin-bottom:2px}
