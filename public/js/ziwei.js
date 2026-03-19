@@ -1184,17 +1184,29 @@ const ZiWei = (function () {
           });
           html += '</div>';
 
-          // 自化检测
+          // 自化检测 — 显示具体是哪颗星自化
+          var SELF_HUA_TABLE = {
+            '甲':['廉贞','破军','武曲','太阳'],'乙':['天机','天梁','紫微','太阴'],
+            '丙':['天同','天机','文昌','廉贞'],'丁':['太阴','天同','天机','巨门'],
+            '戊':['贪狼','太阴','右弼','天机'],'己':['武曲','贪狼','天梁','文曲'],
+            '庚':['太阳','武曲','太阴','天同'],'辛':['巨门','太阳','文曲','文昌'],
+            '壬':['天梁','紫微','左辅','武曲'],'癸':['破军','巨门','太阴','贪狼']
+          };
           var selfHuaList = [];
-          ['禄','权','科','忌'].forEach(function(h) {
-            try { if (p.selfMutaged(h)) selfHuaList.push(h); } catch(e) {}
+          var selfHuaNames = ['禄','权','科','忌'];
+          selfHuaNames.forEach(function(h, hi) {
+            try {
+              if (p.selfMutaged(h)) {
+                var starName = (SELF_HUA_TABLE[p.heavenlyStem]||[])[hi] || '';
+                selfHuaList.push({ hua: h, star: starName });
+              }
+            } catch(e) {}
           });
           if (selfHuaList.length > 0) {
             html += '<div style="margin-top:2px">';
-            selfHuaList.forEach(function(h) {
-              var shColor = h==='忌'?'#fff':h==='禄'?'#fff':h==='权'?'#fff':'#fff';
-              var shBg = h==='忌'?'#dc2626':h==='禄'?'#16a34a':h==='权'?'#d97706':'#2563eb';
-              html += '<span style="font-size:.6rem;padding:1px 4px;border-radius:3px;background:'+shBg+';color:'+shColor+';font-weight:700;margin-right:2px">自化'+h+'</span>';
+            selfHuaList.forEach(function(sh) {
+              var shBg = sh.hua==='忌'?'#dc2626':sh.hua==='禄'?'#16a34a':sh.hua==='权'?'#d97706':'#2563eb';
+              html += '<span style="font-size:.6rem;padding:1px 5px;border-radius:3px;background:'+shBg+';color:#fff;font-weight:700;margin-right:2px">' + sh.star + '自化' + sh.hua + '</span>';
             });
             html += '</div>';
           }
