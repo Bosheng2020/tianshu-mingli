@@ -947,7 +947,7 @@
                     var p1 = getPairPerson('hh', 1);
                     var p2 = getPairPerson('hh', 2);
                     var result = HeHun.analyze(p1, p2);
-                    resultDiv.innerHTML = HeHun.render(result);
+                    HeHun.render(result, resultDiv);
                     try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'hehun'})}); } catch(e2){}
                 } catch(err) {
                     resultDiv.innerHTML = '<div class="interp-card"><p style="color:red">合婚分析出错：'+err.message+'</p></div>';
@@ -970,7 +970,7 @@
                     var p1 = getPairPerson('pt', 1);
                     var p2 = getPairPerson('pt', 2);
                     var result = Partner.analyze(p1, p2);
-                    resultDiv.innerHTML = Partner.render(result);
+                    Partner.render(result, resultDiv);
                     try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'partner'})}); } catch(e2){}
                 } catch(err) {
                     resultDiv.innerHTML = '<div class="interp-card"><p style="color:red">合盘分析出错：'+err.message+'</p></div>';
