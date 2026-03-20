@@ -700,31 +700,84 @@
         }, 1500);
     });
 
-    // ===== 掷筊 =====
+    // ===== 掷筊（逐次动画） =====
     document.getElementById('btn-throw-jiao').addEventListener('click', function() {
         var btn = this;
         var question = document.getElementById('jiao-question').value;
         var resultDiv = document.getElementById('jiao-result');
-        btn.disabled = true; btn.textContent = '掷筊中...';
-        resultDiv.innerHTML = '<div class="loading">掷筊中</div>';
-
-        // Throw 3 times with delay
+        btn.disabled = true;
         var results = [];
-        var throwCount = 0;
+        var JR = LingQian.JIAO_RESULT;
 
-        function doThrow() {
-            throwCount++;
-            results.push(LingQian.throwJiao());
-            if (throwCount < 3) {
-                setTimeout(doThrow, 600);
+        // Show initial state
+        resultDiv.innerHTML = '<div class="interp-card" style="text-align:center">' +
+          (question ? '<p style="font-style:italic;color:var(--ink-light);margin-bottom:12px">所问：' + question + '</p>' : '') +
+          '<div class="jiao-results" id="jiao-live"></div>' +
+          '<div id="jiao-verdict" style="margin-top:16px"></div></div>';
+
+        var liveDiv = document.getElementById('jiao-live');
+        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        function renderLiveThrow(idx) {
+          // Show placeholder for throws not yet done
+          var html = '';
+          for (var i = 0; i < 3; i++) {
+            html += '<div class="jiao-throw">';
+            html += '<div class="jiao-num">第 ' + (i+1) + ' 筊</div>';
+            if (i < results.length) {
+              var j = JR[results[i]];
+              html += '<div class="jiao-symbol" style="font-size:2.5rem">' + j.symbol + '</div>';
+              html += '<div class="jiao-name" style="color:' + j.color + ';font-weight:700;font-size:1.1rem">' + j.name + '</div>';
+            } else if (i === results.length) {
+              // Currently throwing animation
+              html += '<div class="jiao-symbol" style="font-size:2.5rem;animation:shake .5s ease-in-out infinite">🌙☀️</div>';
+              html += '<div class="jiao-name" style="color:var(--ink-light);font-size:.9rem">掷筊中...</div>';
             } else {
-                resultDiv.innerHTML = LingQian.renderJiao(results, question);
-                try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'jiaobei',results:results})}); } catch(e) {}
-                btn.disabled = false; btn.textContent = '再掷一次';
-                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              html += '<div class="jiao-symbol" style="font-size:2.5rem;opacity:.2">🌙☀️</div>';
+              html += '<div class="jiao-name" style="color:var(--ink-light);opacity:.3">等待中</div>';
             }
+            html += '</div>';
+          }
+          liveDiv.innerHTML = html;
         }
-        setTimeout(doThrow, 800);
+
+        function doThrow(idx) {
+          btn.textContent = '第 ' + (idx+1) + ' 筊...';
+          renderLiveThrow(idx);
+
+          setTimeout(function() {
+            results.push(LingQian.throwJiao());
+            renderLiveThrow(idx + 1);
+
+            if (idx < 2) {
+              setTimeout(function() { doThrow(idx + 1); }, 800);
+            } else {
+              // All 3 done — show verdict
+              btn.disabled = false; btn.textContent = '再掷一次';
+              try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'jiaobei',results:results})}); } catch(e) {}
+
+              var shengCount = results.filter(function(r){return r==='sheng'}).length;
+              var xiaoCount = results.filter(function(r){return r==='xiao'}).length;
+              var verdict = document.getElementById('jiao-verdict');
+              var vh = '<div style="padding:16px;border-radius:8px;background:rgba(0,0,0,.02)">';
+              if (shengCount === 3) {
+                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--jade)">三圣筊！神明大力应允！</p><p>此事大吉，放手去做，必有善果。</p>';
+              } else if (shengCount >= 2) {
+                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--jade)">二圣一' + (xiaoCount?'笑':'阴') + '，基本应允</p><p>行事时注意细节，稍加谨慎即可。</p>';
+              } else if (shengCount === 1) {
+                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--gold)">态度模糊</p><p>建议重新整理问题再问一次。</p>';
+              } else if (xiaoCount >= 2) {
+                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--gold)">多笑筊，神明含笑</p><p>请认真思考后重新提问。</p>';
+              } else {
+                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--vermillion)">多阴筊，神明不允</p><p>此事不宜进行，建议另寻他路。</p>';
+              }
+              vh += '</div>';
+              verdict.innerHTML = vh;
+            }
+          }, 1200);
+        }
+
+        setTimeout(function() { doThrow(0); }, 500);
     });
 
     // ===== UX: Auto scroll to result after paipan =====
