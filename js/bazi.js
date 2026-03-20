@@ -960,8 +960,87 @@ const BaZi = (function () {
 
     html.push('<p style="margin-top:8px">五行最旺：' + elSpan(maxWx + '（' + result.elementPct[maxWx] + '%）', maxWx) +
       '　五行最弱：' + elSpan(minWx + '（' + result.elementPct[minWx] + '%）', minWx) + '</p>');
-    if (result.elementPct[minWx] === 0) {
-      html.push('<p style="color:var(--vermillion,#C53D43)">命局中缺' + minWx + '，宜在名字、方位、颜色、饰品等方面适当补充。</p>');
+
+    // ===== 五行缺失真假分析 =====
+    var useYS = result.finalYongShen || result.yongShen;
+    var useJS = result.jiShen;
+    var missingWx = wxOrder.filter(function(wx) { return result.elementPct[wx] === 0; });
+    var weakWx = wxOrder.filter(function(wx) { return result.elementPct[wx] > 0 && result.elementPct[wx] <= 5; });
+
+    if (missingWx.length > 0 || weakWx.length > 0) {
+      html.push('<h4>五行缺失分析</h4>');
+      html.push('<p style="font-size:.84rem;color:var(--ink-light)">民间常说「缺什么补什么」，这是不准确的。正确的做法是<strong>看用神需要什么才补什么</strong>。缺失的五行如果是忌神，缺了反而是福气。</p>');
+
+      var cityMap = {
+        '木': '东方城市（上海、杭州、南京、苏州、日本方向），或名含「木、林、森、东」的地方',
+        '火': '南方城市（深圳、广州、海南、香港、新加坡、澳洲方向），或名含「阳、明、南、火」的地方',
+        '土': '本地发展最佳，或中部城市（武汉、长沙、郑州），或名含「山、城、坤」的地方',
+        '金': '西方城市（成都、重庆、西安），或西方国家（欧美方向），名含「金、银、西」的地方',
+        '水': '北方城市（北京、天津、哈尔滨），或靠水城市（大连、青岛、厦门），名含「海、河、江、水」的地方'
+      };
+      var jewelMap = {
+        '木': '翡翠、绿幽灵水晶、木质手串（沉香、小叶紫檀）、绿松石',
+        '火': '红玛瑙、石榴石、红纹石、紫水晶、红色手绳',
+        '土': '黄水晶、蜜蜡琥珀、和田玉、虎眼石、陶瓷饰品',
+        '金': '金银首饰、白水晶、钛晶、铂金、不锈钢手表',
+        '水': '黑曜石、海蓝宝、蓝宝石、墨翠、黑玛瑙'
+      };
+      var petMap = {
+        '木': '养绿植（发财树、富贵竹）、养兔、养猫',
+        '火': '养狗、养鹦鹉等鸟类、养红色观赏鱼',
+        '土': '养狗、养陆龟、多接触大地（赤脚走草地）',
+        '金': '养鸡、养白色宠物、养金鱼',
+        '水': '养鱼（黑色为佳）、养龟、放水族箱'
+      };
+      var colorMap = {'木':'绿色、青色','火':'红色、紫色、粉色','土':'黄色、棕色、米色','金':'白色、银色、金色','水':'黑色、深蓝、藏青'};
+      var numMap = {'木':'3、8','火':'2、7','土':'5、0','金':'4、9','水':'1、6'};
+      var dirMap = {'木':'东方、东南方','火':'南方','土':'中央、东北、西南','金':'西方、西北方','水':'北方'};
+
+      missingWx.forEach(function(wx) {
+        var isYongShen = (wx === useYS);
+        var isJiShen = (wx === useJS);
+        var isTiaohou = result.tiaohou && (result.tiaohou === '丙' && wx === '火' || result.tiaohou === '壬' && wx === '水');
+
+        var tagColor, tagText, borderColor, bgColor;
+        if (isYongShen || isTiaohou) {
+          tagColor = '#dc2626'; tagText = '真缺 — 必须补！'; borderColor = '#dc2626'; bgColor = 'rgba(220,38,38,.04)';
+        } else if (isJiShen) {
+          tagColor = '#16a34a'; tagText = '假缺 — 缺了是福！'; borderColor = '#16a34a'; bgColor = 'rgba(22,163,74,.04)';
+        } else {
+          tagColor = '#d97706'; tagText = '闲缺 — 可补可不补'; borderColor = '#d97706'; bgColor = 'rgba(217,119,6,.04)';
+        }
+
+        html.push('<div style="border:2px solid '+borderColor+';background:'+bgColor+';padding:14px 18px;margin:8px 0;border-radius:8px">');
+        html.push('<p style="font-size:1rem"><strong>' + elSpan('命局缺' + wx, wx) + '</strong> <span style="color:'+tagColor+';font-weight:700;font-size:.88rem">' + tagText + '</span></p>');
+
+        if (isYongShen || isTiaohou) {
+          html.push('<p>' + wx + '是命局用神' + (isTiaohou ? '（调候急需）':'') + '，缺失会严重影响运势。必须通过后天方式积极补充：</p>');
+          html.push('<details class="yearly-detail" open><summary class="yearly-summary"><span class="yr-palace">补' + wx + '方案</span></summary><div class="yearly-content">');
+          html.push('<p><strong>方位：</strong>' + dirMap[wx] + '</p>');
+          html.push('<p><strong>适合发展城市：</strong>' + cityMap[wx] + '</p>');
+          html.push('<p><strong>颜色：</strong>日常穿着、家居装饰宜用 ' + colorMap[wx] + '</p>');
+          html.push('<p><strong>数字：</strong>手机号、车牌、楼层宜含 ' + numMap[wx] + '</p>');
+          html.push('<p><strong>饰品：</strong>' + jewelMap[wx] + '</p>');
+          html.push('<p><strong>宠物/植物：</strong>' + petMap[wx] + '</p>');
+          html.push('<p><strong>行业：</strong>从事五行属' + wx + '的行业最有利</p>');
+          html.push('</div></details>');
+        } else if (isJiShen) {
+          html.push('<p>' + wx + '是命局忌神，缺失反而对命主有利。<strong>千万不要刻意去补！</strong>补了忌神等于给自己添堵，运势反而下降。</p>');
+          html.push('<p style="font-size:.85rem;color:var(--ink-light)">很多人误以为五行要齐全才好，这是最大的命理误区。忌神五行越弱越好，缺了更妙。</p>');
+        } else {
+          html.push('<p>' + wx + '既非用神也非忌神（闲神），缺失影响不大。如果想补可以适当补一点，但不必过度在意。</p>');
+        }
+        html.push('</div>');
+      });
+
+      // 弱但不缺的五行
+      weakWx.forEach(function(wx) {
+        if (wx === useYS) {
+          html.push('<div style="border-left:3px solid #d97706;background:rgba(217,119,6,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">');
+          html.push('<p><strong>' + elSpan(wx + '偏弱（' + result.elementPct[wx] + '%）', wx) + '</strong> — ' + wx + '是用神但力量不足，宜适当增强。方位 ' + dirMap[wx] + '，颜色 ' + colorMap[wx] + '。</p>');
+          html.push('</div>');
+        }
+      });
     }
     html.push('</div>');
 
