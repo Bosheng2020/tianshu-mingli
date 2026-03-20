@@ -150,16 +150,24 @@
         <div class="interp-card" style="text-align:center">
             <h2>观音灵签</h2>
             <p class="section-note" style="text-align:center;border:none;padding:0">心中默念所求之事，诚心祈请观世音菩萨指引。</p>
-            <div style="font-size:5rem;margin:20px 0">🙏</div>
+            <div class="qian-tube" style="font-size:5rem;margin:20px 0">🏮</div>
             <div class="form-row" style="justify-content:center">
                 <div class="form-group" style="max-width:400px">
-                    <input type="text" id="qian-question" placeholder="心中所求之事（可不填）">
+                    <input type="text" id="qian-question" placeholder="心中所求之事（如：事业、感情、财运...）">
                 </div>
             </div>
             <button class="btn btn-primary" id="btn-draw-qian" style="font-size:1.1rem;padding:14px 40px;margin-top:8px">
                 诚心抽签
             </button>
-            <p style="font-size:.82rem;color:var(--ink-light);margin-top:12px">共一百签，每签皆有独立签诗与解读</p>
+            <p style="font-size:.82rem;color:var(--ink-light);margin-top:12px">共一百签，每签皆有签诗、典故、六项细解与行动建议</p>
+            <!-- 查签功能 -->
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+                <p style="font-size:.85rem;color:var(--ink-light);margin-bottom:8px">已知签号？直接查签：</p>
+                <div style="display:flex;justify-content:center;align-items:center;gap:8px">
+                    <input type="number" id="qian-lookup-num" min="1" max="100" placeholder="1-100" style="width:80px;text-align:center;padding:8px;border:1px solid var(--border);border-radius:var(--r);font-size:1rem">
+                    <button class="btn" id="btn-lookup-qian" style="padding:8px 20px;font-size:.9rem;background:var(--cream);border:1px solid var(--gold);color:var(--gold)">查签</button>
+                </div>
+            </div>
         </div>
         <div id="qian-result" class="result-area"></div>
     </section>
@@ -169,20 +177,24 @@
         <div class="interp-card" style="text-align:center">
             <h2>掷筊问事</h2>
             <p class="section-note" style="text-align:center;border:none;padding:0">掷筊是向神明请示的传统方式。心中默想问题，掷出三次筊杯，以三次结果综合判断神明旨意。</p>
-            <div style="font-size:4rem;margin:16px 0">🌙☀️</div>
+            <div class="jiao-cup" style="font-size:4rem;margin:16px 0">🌙☀️</div>
             <div class="form-row" style="justify-content:center">
                 <div class="form-group" style="max-width:400px">
-                    <input type="text" id="jiao-question" placeholder="请示神明之事（可不填）">
+                    <input type="text" id="jiao-question" placeholder="请示神明之事（建议用是非题，如：我应该换工作吗？）">
                 </div>
             </div>
             <button class="btn btn-primary" id="btn-throw-jiao" style="font-size:1.1rem;padding:14px 40px;margin-top:8px">
                 掷筊三次
             </button>
+            <!-- 筊杯说明 + 问法指导 -->
             <div style="margin-top:16px;font-size:.84rem;color:var(--ink-light)">
-                <p>🌙☀️ <strong>圣筊</strong>：一阴一阳，神明应允</p>
-                <p>☀️☀️ <strong>笑筊</strong>：两阳，神明含笑，问题不明确</p>
-                <p>🌙🌙 <strong>阴筊</strong>：两阴，神明不允</p>
+                <p>🌙☀️ <strong>圣筊</strong>：一阴一阳，神明应允 &nbsp;|&nbsp; ☀️☀️ <strong>笑筊</strong>：两阳，神明含笑 &nbsp;|&nbsp; 🌙🌙 <strong>阴筊</strong>：两阴，神明不允</p>
             </div>
+            <!-- 问法指导（折叠） -->
+            <details style="margin-top:12px;text-align:left;max-width:480px;margin-left:auto;margin-right:auto">
+                <summary style="cursor:pointer;font-size:.85rem;color:var(--gold);font-weight:600;text-align:center">掷筊问法指导</summary>
+                <div id="jiao-guide-content" style="margin-top:8px;font-size:.82rem;color:var(--ink-light);line-height:1.8"></div>
+            </details>
         </div>
         <div id="jiao-result" class="result-area"></div>
     </section>

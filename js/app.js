@@ -702,29 +702,98 @@
     document.getElementById('btn-draw-qian').addEventListener('click', function() {
         var btn = this;
         var resultDiv = document.getElementById('qian-result');
+        var question = document.getElementById('qian-question').value.trim();
         btn.disabled = true; btn.textContent = '诚心祈请中...';
-        resultDiv.innerHTML = '<div class="loading">摇签中</div>';
+        // Shaking sign tube animation
+        resultDiv.innerHTML = '<div class="interp-card" style="text-align:center"><div class="qian-tube-shake" style="font-size:5rem;display:inline-block">🏮</div><p style="margin-top:12px;font-family:var(--font-h);color:var(--ink-light)">虔心摇签中...</p></div>';
 
-        // Shake animation delay for ritual feel
         setTimeout(function() {
             var qian = LingQian.drawQian();
             try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'lingqian',result:qian.n})}); } catch(e) {}
-            resultDiv.innerHTML = LingQian.renderQian(qian);
+            resultDiv.innerHTML = LingQian.renderQian(qian, question);
+            // Add 掷筊确认 button after sign result
+            resultDiv.innerHTML += '<div class="interp-card" style="text-align:center;border:2px dashed var(--gold);background:rgba(197,146,46,.03)"><p style="font-family:var(--font-h);color:var(--gold);margin-bottom:10px">传统习俗：抽签后需掷筊向神明确认此签</p><button class="btn btn-primary" id="btn-confirm-jiao" style="padding:10px 30px">掷筊确认此签</button><div id="confirm-jiao-result" style="margin-top:12px"></div></div>';
+            // Bind confirm jiao handler
+            var confirmBtn = document.getElementById('btn-confirm-jiao');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    var cb = this;
+                    cb.disabled = true; cb.textContent = '掷筊中...';
+                    var cResults = [];
+                    var cDiv = document.getElementById('confirm-jiao-result');
+                    var JR = LingQian.JIAO_RESULT;
+                    function doConfirm(ci) {
+                        setTimeout(function() {
+                            cResults.push(LingQian.throwJiao());
+                            // Show progress
+                            var ph = '<div class="jiao-results" style="justify-content:center;margin:8px 0">';
+                            for (var k = 0; k < 3; k++) {
+                                ph += '<div class="jiao-throw" style="min-width:70px;padding:8px 12px">';
+                                ph += '<div class="jiao-num" style="font-size:.75rem">第'+(k+1)+'筊</div>';
+                                if (k < cResults.length) {
+                                    var jr = JR[cResults[k]];
+                                    ph += '<div style="font-size:1.8rem">'+jr.symbol+'</div><div style="color:'+jr.color+';font-weight:700;font-size:.9rem">'+jr.name+'</div>';
+                                } else {
+                                    ph += '<div style="font-size:1.8rem;opacity:.2">🌙☀️</div>';
+                                }
+                                ph += '</div>';
+                            }
+                            ph += '</div>';
+                            cDiv.innerHTML = ph;
+                            if (ci < 2) {
+                                doConfirm(ci + 1);
+                            } else {
+                                cb.style.display = 'none';
+                                var sc = cResults.filter(function(r){return r==='sheng'}).length;
+                                var cvh = '';
+                                if (sc >= 2) {
+                                    cvh = '<p style="color:var(--jade);font-weight:700;font-size:1.05rem;margin-top:8px">✅ 神明确认此签有效！可依签意行事。</p>';
+                                } else if (sc === 1) {
+                                    cvh = '<p style="color:var(--gold);font-weight:700;font-size:1.05rem;margin-top:8px">⚠️ 神明态度不明确，建议重新抽签。</p>';
+                                } else {
+                                    cvh = '<p style="color:var(--vermillion);font-weight:700;font-size:1.05rem;margin-top:8px">❌ 神明未确认此签，建议重新抽签。</p>';
+                                }
+                                cDiv.innerHTML += cvh;
+                            }
+                        }, 900);
+                    }
+                    doConfirm(0);
+                });
+            }
             btn.disabled = false; btn.textContent = '再抽一签';
             resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 1500);
+        }, 2000);
     });
 
-    // ===== 掷筊（逐次动画） =====
+    // ===== 观音灵签：查签 =====
+    var lookupBtn = document.getElementById('btn-lookup-qian');
+    if (lookupBtn) {
+        lookupBtn.addEventListener('click', function() {
+            var numInput = document.getElementById('qian-lookup-num');
+            var num = parseInt(numInput.value);
+            var resultDiv = document.getElementById('qian-result');
+            if (!num || num < 1 || num > 100) {
+                resultDiv.innerHTML = '<div class="interp-card" style="text-align:center;color:var(--vermillion)">请输入1-100之间的签号</div>';
+                return;
+            }
+            var qian = LingQian.lookupQian(num);
+            if (qian) {
+                resultDiv.innerHTML = LingQian.renderQian(qian);
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    }
+
+    // ===== 掷筊（逐次动画 + 深度解读） =====
     document.getElementById('btn-throw-jiao').addEventListener('click', function() {
         var btn = this;
-        var question = document.getElementById('jiao-question').value;
+        var question = document.getElementById('jiao-question').value.trim();
         var resultDiv = document.getElementById('jiao-result');
         btn.disabled = true;
         var results = [];
         var JR = LingQian.JIAO_RESULT;
 
-        // Show initial state
+        // Show initial state with jiao toss animation
         resultDiv.innerHTML = '<div class="interp-card" style="text-align:center">' +
           (question ? '<p style="font-style:italic;color:var(--ink-light);margin-bottom:12px">所问：' + question + '</p>' : '') +
           '<div class="jiao-results" id="jiao-live"></div>' +
@@ -733,19 +802,20 @@
         var liveDiv = document.getElementById('jiao-live');
         resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
+        var throwContext = ['起始之象','过程之象','结果之象'];
+
         function renderLiveThrow(idx) {
-          // Show placeholder for throws not yet done
           var html = '';
           for (var i = 0; i < 3; i++) {
             html += '<div class="jiao-throw">';
-            html += '<div class="jiao-num">第 ' + (i+1) + ' 筊</div>';
+            html += '<div class="jiao-num">第 ' + (i+1) + ' 筊 <span style="font-size:.7rem;color:var(--ink-light)">'+throwContext[i]+'</span></div>';
             if (i < results.length) {
               var j = JR[results[i]];
               html += '<div class="jiao-symbol" style="font-size:2.5rem">' + j.symbol + '</div>';
               html += '<div class="jiao-name" style="color:' + j.color + ';font-weight:700;font-size:1.1rem">' + j.name + '</div>';
+              if (j.detail) html += '<div style="font-size:.75rem;color:var(--ink-light);margin-top:2px">' + j.detail + '</div>';
             } else if (i === results.length) {
-              // Currently throwing animation
-              html += '<div class="jiao-symbol" style="font-size:2.5rem;animation:shake .5s ease-in-out infinite">🌙☀️</div>';
+              html += '<div class="jiao-symbol jiao-toss-anim" style="font-size:2.5rem">🌙☀️</div>';
               html += '<div class="jiao-name" style="color:var(--ink-light);font-size:.9rem">掷筊中...</div>';
             } else {
               html += '<div class="jiao-symbol" style="font-size:2.5rem;opacity:.2">🌙☀️</div>';
@@ -767,33 +837,24 @@
             if (idx < 2) {
               setTimeout(function() { doThrow(idx + 1); }, 800);
             } else {
-              // All 3 done — show verdict
+              // All 3 done — use enhanced renderJiao for verdict
               btn.disabled = false; btn.textContent = '再掷一次';
               try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'jiaobei',results:results})}); } catch(e) {}
 
-              var shengCount = results.filter(function(r){return r==='sheng'}).length;
-              var xiaoCount = results.filter(function(r){return r==='xiao'}).length;
               var verdict = document.getElementById('jiao-verdict');
-              var vh = '<div style="padding:16px;border-radius:8px;background:rgba(0,0,0,.02)">';
-              if (shengCount === 3) {
-                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--jade)">三圣筊！神明大力应允！</p><p>此事大吉，放手去做，必有善果。</p>';
-              } else if (shengCount >= 2) {
-                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--jade)">二圣一' + (xiaoCount?'笑':'阴') + '，基本应允</p><p>行事时注意细节，稍加谨慎即可。</p>';
-              } else if (shengCount === 1) {
-                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--gold)">态度模糊</p><p>建议重新整理问题再问一次。</p>';
-              } else if (xiaoCount >= 2) {
-                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--gold)">多笑筊，神明含笑</p><p>请认真思考后重新提问。</p>';
-              } else {
-                vh += '<p style="font-size:1.2rem;font-weight:700;color:var(--vermillion)">多阴筊，神明不允</p><p>此事不宜进行，建议另寻他路。</p>';
-              }
-              vh += '</div>';
-              verdict.innerHTML = vh;
+              verdict.innerHTML = LingQian.renderJiao(results, question);
             }
           }, 1200);
         }
 
         setTimeout(function() { doThrow(0); }, 500);
     });
+
+    // ===== 掷筊：填充问法指导 =====
+    var guideDiv = document.getElementById('jiao-guide-content');
+    if (guideDiv && LingQian.getJiaoGuide) {
+        guideDiv.innerHTML = LingQian.getJiaoGuide();
+    }
 
     // ===== UX: Auto scroll to result after paipan =====
     // (Already handled in setTimeout callbacks above)
