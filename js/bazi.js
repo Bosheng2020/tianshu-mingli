@@ -656,6 +656,13 @@ const BaZi = (function () {
         finalYongShenMethod = '扶抑';
         finalYongShenReason = '以扶抑取用：' + yongShenReason;
       }
+      // 防止用神忌神相同：当调候/通关用神恰好等于扶抑忌神时，调整忌神
+      if (finalYongShen === jiShen) {
+        // 忌神改为克用神的五行
+        var keYS = {'木':'金','火':'水','土':'木','金':'火','水':'土'};
+        jiShen = keYS[finalYongShen] || jiShen;
+        jiShenReason = '忌' + jiShen + '。因综合用神为' + finalYongShen + '（' + finalYongShenMethod + '），忌神调整为克制用神的' + jiShen + '，避免冲突。';
+      }
     })();
 
     // ====== 地支关系 (zhiRelations) ======
