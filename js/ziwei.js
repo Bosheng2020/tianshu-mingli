@@ -1236,7 +1236,24 @@ const ZiWei = (function () {
     html += '<div id="flying-star-content"></div></div>';
 
     // Tip
-    html += '<p style="text-align:center;font-size:.82rem;color:var(--ink-light);margin:-8px 0 16px">点击上方命盘中的任意宫位，查看该宫的飞星四化去向</p>';
+    html += '<p style="text-align:center;font-size:.82rem;color:var(--ink-light);margin:-8px 0 12px">点击上方命盘中的任意宫位，查看该宫的飞星四化去向</p>';
+
+    // ===== 板块导航 =====
+    html += '<div class="interp-card" style="padding:12px 16px;text-align:center" id="zw-nav">';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">';
+    var navItems = [
+      {id:'zw-sec-ming',label:'命宫主星'},{id:'zw-sec-sihua',label:'生年四化'},
+      {id:'zw-sec-zihua',label:'自化'},{id:'zw-sec-laiyin',label:'来因宫'},
+      {id:'zw-sec-stars',label:'六吉六煞'},{id:'zw-sec-palaces',label:'重要宫位'},
+      {id:'zw-sec-dayun',label:'大运走势'},{id:'zw-sec-liunian',label:'逐年运势'}
+    ];
+    navItems.forEach(function(item) {
+      html += '<a href="#' + item.id + '" style="display:inline-block;padding:5px 14px;border-radius:20px;font-size:.82rem;background:var(--cream,#faf8f5);border:1px solid var(--border,#e8e4dd);color:var(--ink,#1a1a2e);text-decoration:none;font-family:var(--font-h);transition:all .15s" onmouseover="this.style.background=\'var(--vermillion)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--cream,#faf8f5)\';this.style.color=\'var(--ink)\'">' + item.label + '</a>';
+    });
+    html += '</div></div>';
+
+    // ===== 详细解读 分隔标题 =====
+    html += '<div style="text-align:center;margin:20px 0 8px;color:var(--ink-light);font-size:.85rem;letter-spacing:.15em">── 详 细 解 读 ──</div>';
 
     // Embed palace data + SIHUA table for JS click handler
     var SIHUA_TBL = {
@@ -1332,8 +1349,24 @@ const ZiWei = (function () {
         }
       };
 
-      document.querySelectorAll('.ziwei-cell').forEach(function(c){c.style.outline='none'});
+      document.querySelectorAll('.ziwei-cell').forEach(function(c){c.style.outline='none';c.style.backgroundColor=''});
       el.style.outline = '2px solid #c5922e';
+
+      // 三方四正高亮: 对宫 + 两个三合宫
+      // Palace idx 0-11 maps to branch positions: 0=寅,1=卯,...,11=丑
+      // 对宫 = (idx + 6) % 12 in palace order... but idx here is iztro's 0-11 (寅=0 to 丑=11)
+      // Actually iztro palaces are 0=寅,1=卯,...,11=丑 following branch order
+      // 对宫: +6, 三合: +4 and +8
+      var duiGong = (idx + 6) % 12;
+      var sanHe1 = (idx + 4) % 12;
+      var sanHe2 = (idx + 8) % 12;
+      var sfzCells = document.querySelectorAll('.ziwei-cell');
+      sfzCells.forEach(function(c) {
+        var ci = parseInt(c.getAttribute('data-palace-idx'));
+        if (ci === duiGong || ci === sanHe1 || ci === sanHe2) {
+          c.style.backgroundColor = 'rgba(197,146,46,.08)';
+        }
+      });
 
       // ===== Draw SVG flying star lines =====
       var svg = document.getElementById('fly-svg');
@@ -1495,72 +1528,11 @@ const ZiWei = (function () {
       panel.scrollIntoView({behavior:'smooth',block:'nearest'});
     };
 
-    // ===== 来因宫解读 =====
-    var laiyinPalace = pals.find(function(p){return p.isOriginalPalace});
-    if (laiyinPalace) {
-      var lyMajors = (laiyinPalace.majorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name+(s.brightness?'('+s.brightness+')':'')});
-      var lyStem = laiyinPalace.heavenlyStem;
-      var lySihua = SIHUA_TBL[lyStem] || [];
-
-      var laiyinInterp = {
-        '命宫': '来因宫在命宫，说明命主此生的课题就是「认识自己」。一切的因果都从自身出发，自己既是因也是果。飞星派认为这是最核心的格局——生年四化全部围绕自我展开。需要特别重视命宫的四化飞出方向。',
-        '兄弟': '来因宫在兄弟宫，说明命主此生的因缘与兄弟朋友、同事伙伴密切相关。成败往往取决于人际关系的经营。合伙事业的好坏是此生的重要课题。',
-        '夫妻': '来因宫在夫妻宫，说明命主此生的因缘与婚姻感情密切相关。配偶是此生最重要的贵人（或克星）。婚姻的好坏直接影响人生走向。',
-        '子女': '来因宫在子女宫，说明命主此生的因缘与子女、投资、创造力相关。子女可能是此生最大的牵挂或成就。投资决策也是重要课题。',
-        '财帛': '来因宫在财帛宫，说明命主此生的因缘与金钱财富密切相关。财运的起伏是此生的主线。需要特别关注理财能力的培养。',
-        '疾厄': '来因宫在疾厄宫，说明命主此生的因缘与身体健康密切相关。健康是一切的基础，此生需要格外重视养生保健。身体好坏直接影响其他方面的发展。',
-        '迁移': '来因宫在迁移宫，说明命主此生的因缘与外出、迁徙、社交密切相关。在外地发展比在家乡更有机会。贵人多在远方。社交能力是成功的关键。',
-        '仆役': '来因宫在交友宫（仆役），说明命主此生的因缘与朋友、下属、合作伙伴密切相关。能否识人善用是此生的核心课题。',
-        '官禄': '来因宫在官禄宫，说明命主此生的因缘与事业发展密切相关。事业的成败是此生的主旋律。适合将大量精力投入到职业发展中。',
-        '田宅': '来因宫在田宅宫，说明命主此生的因缘与家庭、不动产密切相关。安家置业是此生的重要课题。家庭环境对命主影响极大。',
-        '福德': '来因宫在福德宫，说明命主此生的因缘与精神世界、享受、修行密切相关。内心的满足比外在的成功更重要。此生的课题是找到心灵的归宿。',
-        '父母': '来因宫在父母宫，说明命主此生的因缘与长辈、学业、家族密切相关。父母的影响深远，家族传承是重要课题。学业和文书运也是此生的关键。'
-      };
-
-      html += '<div class="interp-card"><h3>来因宫解读（飞星派核心）</h3>';
-      html += '<p style="font-size:.84rem;color:var(--ink-light)">来因宫是飞星派独有的概念。宫干与年干相同的那个宫位即为「来因宫」，代表此人今生来到世间的因缘所在，也是生年四化的源头。来因宫揭示了命主此生最核心的人生课题。</p>';
-
-      html += '<div style="background:linear-gradient(135deg,rgba(197,146,46,.08),rgba(197,146,46,.02));border:1px solid var(--gold);border-radius:8px;padding:16px 20px;margin:12px 0">';
-      html += '<p style="font-size:1.1rem;font-weight:700;color:var(--gold)">来因宫：' + laiyinPalace.name + '宫（' + lyStem + laiyinPalace.earthlyBranch + '）</p>';
-      if (lyMajors.length) html += '<p>宫内主星：' + lyMajors.join('、') + '</p>';
-      html += '</div>';
-
-      // 来因宫解读
-      var lyText = laiyinInterp[laiyinPalace.name] || '来因宫代表此生因缘的核心领域。';
-      html += '<p>' + lyText + '</p>';
-
-      // 来因宫飞出的四化
-      html += '<h4>来因宫四化飞出</h4>';
-      html += '<p style="font-size:.84rem;color:var(--ink-light)">来因宫（' + lyStem + '干）飞出的四化是解读命盘的钥匙。生年四化实际上就是来因宫天干产生的，因此来因宫的四化方向揭示了此生因缘的具体去向。</p>';
-
-      lySihua.forEach(function(starName, idx) {
-        var targetPalace = starToPalace[starName] || '未知';
-        var isSelf = (targetPalace === laiyinPalace.name);
-        var colors = ['#16a34a','#d97706','#2563eb','#dc2626'];
-        var huaNames = ['化禄','化权','化科','化忌'];
-
-        html += '<p><strong style="color:' + colors[idx] + '">' + starName + ' ' + huaNames[idx] + '</strong> → <strong>' + targetPalace + '宫</strong>';
-        if (isSelf) html += ' <span style="background:#dc2626;color:#fff;padding:1px 6px;border-radius:3px;font-size:.78rem;font-weight:700">自化</span>';
-
-        // Brief meaning
-        var huaMeanings = {
-          '化禄': '（福气、资源流向此宫代表的领域）',
-          '化权': '（掌控力、执行力投注在此宫代表的领域）',
-          '化科': '（名声、贵人运体现在此宫代表的领域）',
-          '化忌': '（执念、困扰集中在此宫代表的领域——也是最需要修行的课题）'
-        };
-        html += ' <span style="font-size:.84rem;color:var(--ink-light)">' + (huaMeanings[huaNames[idx]]||'') + '</span>';
-        html += '</p>';
-      });
-
-      html += '</div>';
-    }
-
     // ===== 命宫解读 =====
     if (mingIdx >= 0) {
       var ming = pals[mingIdx];
       var mStars = (ming.majorStars||[]).filter(function(s){return s.name});
-      html += '<div class="interp-card"><h3>命宫主星解读</h3>';
+      html += '<div class="interp-card"><h3 id="zw-sec-ming">命宫主星解读</h3>';
       if (mStars.length === 0) {
         var qianyi = pals.find(function(p){return p.name==='迁移'});
         var qyStars = qianyi ? (qianyi.majorStars||[]).filter(function(s){return s.name}) : [];
@@ -1692,113 +1664,8 @@ const ZiWei = (function () {
       html += '</div>';
     }
 
-    // ===== 六吉六煞全盘解读 =====
-    html += '<div class="interp-card"><h3>六吉六煞全盘解读</h3>';
-    html += '<p style="font-size:.84rem;color:var(--ink-light)">六吉星（文昌、文曲、左辅、右弼、天魁、天钺）和六煞星（擎羊、陀罗、火星、铃星、地空、地劫）散布在命盘各宫，对每个宫位的主星形成增益或干扰。以下逐一分析它们在您命盘中的位置和影响。</p>';
-
-    // Collect all 12 key minor stars across all palaces
-    var sixJi = ['文昌','文曲','左辅','右弼','天魁','天钺'];
-    var sixSha = ['擎羊','陀罗','火星','铃星','地空','地劫'];
-    var allTwelve = sixJi.concat(sixSha);
-
-    // 六吉星
-    html += '<h4 style="color:var(--jade)">六吉星</h4>';
-    sixJi.forEach(function(starName) {
-      var foundPalace = null, foundStar = null;
-      pals.forEach(function(p) {
-        (p.minorStars||[]).forEach(function(s) {
-          if (s.name === starName) { foundPalace = p; foundStar = s; }
-        });
-      });
-      if (!foundPalace) return;
-      var interp = minorInterp[starName]; if (!interp) return;
-      var b = foundStar.brightness || '';
-      var text = (b && interp[b]) ? interp[b] : interp.base;
-      var coStars = (foundPalace.majorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name});
-
-      html += '<div style="border-left:3px solid var(--jade);background:rgba(45,143,111,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
-      html += '<p><strong style="color:var(--jade)">' + starName + (b ? '（'+b+'）' : '') + '</strong> 在 <strong>' + foundPalace.name + '宫</strong>';
-      if (coStars.length) html += '（同宫：' + coStars.join('、') + '）';
-      html += '</p>';
-      html += '<p>' + text + '</p>';
-      html += '</div>';
-    });
-
-    // 六煞星
-    html += '<h4 style="color:#1a1a1a">六煞星</h4>';
-    sixSha.forEach(function(starName) {
-      var foundPalace = null, foundStar = null;
-      pals.forEach(function(p) {
-        (p.minorStars||[]).forEach(function(s) {
-          if (s.name === starName) { foundPalace = p; foundStar = s; }
-        });
-      });
-      if (!foundPalace) return;
-      var interp = minorInterp[starName]; if (!interp) return;
-      var b = foundStar.brightness || '';
-      var palaceName = foundPalace.name;
-
-      // For 地空地劫: use palace-specific text
-      var text = '';
-      if ((starName === '地空' || starName === '地劫') && interp[palaceName]) {
-        text = interp[palaceName];
-      } else if (b && interp[b]) {
-        text = interp[b];
-      } else {
-        text = interp.base;
-      }
-
-      var coStars = (foundPalace.majorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name});
-      var isWarn = b === '陷' || starName === '地空' || starName === '地劫';
-      var borderColor = isWarn ? '#dc2626' : '#1a1a1a';
-      var bgColor = isWarn ? 'rgba(220,38,38,.04)' : 'rgba(26,26,26,.03)';
-
-      html += '<div style="border-left:3px solid '+borderColor+';background:'+bgColor+';padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
-      html += '<p><strong style="color:'+borderColor+'">' + starName + (b ? '（'+b+'）' : '') + '</strong> 在 <strong>' + palaceName + '宫</strong>';
-      if (coStars.length) html += '（同宫：' + coStars.join('、') + '）';
-      html += '</p>';
-      html += '<p>' + text + '</p>';
-
-      // Special warnings for 地空地劫 with financial stars
-      if ((starName === '地空' || starName === '地劫') && coStars.length) {
-        var hasCai = ['武曲','天府','太阴'].some(function(s){return coStars.indexOf(s)>=0});
-        if (hasCai) html += '<p style="color:#dc2626;font-weight:600">' + starName + '与财星同宫，财运受损较重，有财难聚。</p>';
-      }
-      html += '</div>';
-    });
-
-    // 地空地劫同宫特别提示
-    var dkPal = null, djPal = null;
-    pals.forEach(function(p) {
-      (p.minorStars||[]).forEach(function(s) {
-        if (s.name === '地空') dkPal = p;
-        if (s.name === '地劫') djPal = p;
-      });
-    });
-    if (dkPal && djPal && dkPal.name === djPal.name) {
-      html += '<div style="border-left:4px solid #dc2626;background:rgba(220,38,38,.06);padding:12px 16px;margin:10px 0;border-radius:0 6px 6px 0">';
-      html += '<p><strong style="color:#dc2626;font-size:1rem">⚠ 地空地劫同宫（' + dkPal.name + '宫）</strong></p>';
-      html += '<p>空劫同宫是命盘中影响极大的组合。该宫位代表的领域会经历大起大落、从有到无再从无到有的轮回。但也代表此人在该领域有超越常人的悟性和突破能力。「置之死地而后生」正是空劫同宫者的写照。</p>';
-      html += '</div>';
-    }
-
-    html += '</div>';
-
-    // ===== 十二宫位 =====
-    var kps = [{n:'官禄',t:'事业'},{n:'财帛',t:'财运'},{n:'夫妻',t:'感情'},{n:'子女',t:'子女桃花'},{n:'疾厄',t:'健康'},{n:'福德',t:'精神'},{n:'迁移',t:'外出'},{n:'田宅',t:'不动产'}];
-    html += '<div class="interp-card"><h3>重要宫位</h3>';
-    kps.forEach(function(kn) {
-      var kp = pals.find(function(p){return p.name===kn.n}); if (!kp) return;
-      var mj = (kp.majorStars||[]).filter(function(s){return s.name});
-      html += '<h4>' + kn.n + '（' + kn.t + '）— ' + (kp.heavenlyStem||'')+(kp.earthlyBranch||'') + '</h4>';
-      html += '<p>主星：' + (mj.map(function(s){return s.name+(s.brightness?'('+s.brightness+')':'')+(s.mutagen?' '+s.mutagen:'')}).join('、')||'无主星') + '</p>';
-      var pr = PALACE_READINGS[kn.n+'宫']; if (pr) mj.forEach(function(s){ if (pr.stars && pr.stars[s.name]) html += '<p>' + pr.stars[s.name] + '</p>'; });
-    });
-    html += '</div>';
-
-    // ===== 四化 =====
     // ===== 生年四化（三合派+飞星派） =====
-    html += '<div class="interp-card"><h3>生年四化（命盘四化）</h3>';
+    html += '<div class="interp-card"><h3 id="zw-sec-sihua">生年四化（命盘四化）</h3>';
     html += '<p style="font-size:.84rem;color:var(--ink-light)">生年四化由出生年天干决定，是命盘中最核心的动态因素。禄权科忌四颗化星分布在不同宫位，揭示此人一生的核心能量走向。</p>';
     var huaFull = ['化禄','化权','化科','化忌'];
     var huaShort = ['禄','权','科','忌'];
@@ -1896,7 +1763,7 @@ const ZiWei = (function () {
     });
 
     if (selfHuaData.length > 0) {
-      html += '<div class="interp-card"><h3>自化解读</h3>';
+      html += '<div class="interp-card"><h3 id="zw-sec-zihua">自化解读</h3>';
       html += '<p style="font-size:.84rem;color:var(--ink-light)">自化是飞星派的核心概念。当一个宫位的天干所飞出的四化星恰好就在本宫内时，称为「自化」。自化意味着该宫位的能量会自动向外流动或内化，对命主有深远影响。</p>';
 
       var selfHuaInterp = {
@@ -2025,8 +1892,180 @@ const ZiWei = (function () {
       html += '</div>';
     }
 
+    // ===== 来因宫解读 =====
+    var laiyinPalace = pals.find(function(p){return p.isOriginalPalace});
+    if (laiyinPalace) {
+      var lyMajors = (laiyinPalace.majorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name+(s.brightness?'('+s.brightness+')':'')});
+      var lyStem = laiyinPalace.heavenlyStem;
+      var lySihua = SIHUA_TBL[lyStem] || [];
+
+      var laiyinInterp = {
+        '命宫': '来因宫在命宫，说明命主此生的课题就是「认识自己」。一切的因果都从自身出发，自己既是因也是果。飞星派认为这是最核心的格局——生年四化全部围绕自我展开。需要特别重视命宫的四化飞出方向。',
+        '兄弟': '来因宫在兄弟宫，说明命主此生的因缘与兄弟朋友、同事伙伴密切相关。成败往往取决于人际关系的经营。合伙事业的好坏是此生的重要课题。',
+        '夫妻': '来因宫在夫妻宫，说明命主此生的因缘与婚姻感情密切相关。配偶是此生最重要的贵人（或克星）。婚姻的好坏直接影响人生走向。',
+        '子女': '来因宫在子女宫，说明命主此生的因缘与子女、投资、创造力相关。子女可能是此生最大的牵挂或成就。投资决策也是重要课题。',
+        '财帛': '来因宫在财帛宫，说明命主此生的因缘与金钱财富密切相关。财运的起伏是此生的主线。需要特别关注理财能力的培养。',
+        '疾厄': '来因宫在疾厄宫，说明命主此生的因缘与身体健康密切相关。健康是一切的基础，此生需要格外重视养生保健。身体好坏直接影响其他方面的发展。',
+        '迁移': '来因宫在迁移宫，说明命主此生的因缘与外出、迁徙、社交密切相关。在外地发展比在家乡更有机会。贵人多在远方。社交能力是成功的关键。',
+        '仆役': '来因宫在交友宫（仆役），说明命主此生的因缘与朋友、下属、合作伙伴密切相关。能否识人善用是此生的核心课题。',
+        '官禄': '来因宫在官禄宫，说明命主此生的因缘与事业发展密切相关。事业的成败是此生的主旋律。适合将大量精力投入到职业发展中。',
+        '田宅': '来因宫在田宅宫，说明命主此生的因缘与家庭、不动产密切相关。安家置业是此生的重要课题。家庭环境对命主影响极大。',
+        '福德': '来因宫在福德宫，说明命主此生的因缘与精神世界、享受、修行密切相关。内心的满足比外在的成功更重要。此生的课题是找到心灵的归宿。',
+        '父母': '来因宫在父母宫，说明命主此生的因缘与长辈、学业、家族密切相关。父母的影响深远，家族传承是重要课题。学业和文书运也是此生的关键。'
+      };
+
+      html += '<div class="interp-card"><h3 id="zw-sec-laiyin">来因宫解读（飞星派核心）</h3>';
+      html += '<p style="font-size:.84rem;color:var(--ink-light)">来因宫是飞星派独有的概念。宫干与年干相同的那个宫位即为「来因宫」，代表此人今生来到世间的因缘所在，也是生年四化的源头。来因宫揭示了命主此生最核心的人生课题。</p>';
+
+      html += '<div style="background:linear-gradient(135deg,rgba(197,146,46,.08),rgba(197,146,46,.02));border:1px solid var(--gold);border-radius:8px;padding:16px 20px;margin:12px 0">';
+      html += '<p style="font-size:1.1rem;font-weight:700;color:var(--gold)">来因宫：' + laiyinPalace.name + '宫（' + lyStem + laiyinPalace.earthlyBranch + '）</p>';
+      if (lyMajors.length) html += '<p>宫内主星：' + lyMajors.join('、') + '</p>';
+      html += '</div>';
+
+      // 来因宫解读
+      var lyText = laiyinInterp[laiyinPalace.name] || '来因宫代表此生因缘的核心领域。';
+      html += '<p>' + lyText + '</p>';
+
+      // 来因宫飞出的四化
+      html += '<h4>来因宫四化飞出</h4>';
+      html += '<p style="font-size:.84rem;color:var(--ink-light)">来因宫（' + lyStem + '干）飞出的四化是解读命盘的钥匙。生年四化实际上就是来因宫天干产生的，因此来因宫的四化方向揭示了此生因缘的具体去向。</p>';
+
+      lySihua.forEach(function(starName, idx) {
+        var targetPalace = starToPalace[starName] || '未知';
+        var isSelf = (targetPalace === laiyinPalace.name);
+        var colors = ['#16a34a','#d97706','#2563eb','#dc2626'];
+        var huaNames = ['化禄','化权','化科','化忌'];
+
+        html += '<p><strong style="color:' + colors[idx] + '">' + starName + ' ' + huaNames[idx] + '</strong> → <strong>' + targetPalace + '宫</strong>';
+        if (isSelf) html += ' <span style="background:#dc2626;color:#fff;padding:1px 6px;border-radius:3px;font-size:.78rem;font-weight:700">自化</span>';
+
+        // Brief meaning
+        var huaMeanings = {
+          '化禄': '（福气、资源流向此宫代表的领域）',
+          '化权': '（掌控力、执行力投注在此宫代表的领域）',
+          '化科': '（名声、贵人运体现在此宫代表的领域）',
+          '化忌': '（执念、困扰集中在此宫代表的领域——也是最需要修行的课题）'
+        };
+        html += ' <span style="font-size:.84rem;color:var(--ink-light)">' + (huaMeanings[huaNames[idx]]||'') + '</span>';
+        html += '</p>';
+      });
+
+      html += '</div>';
+    }
+
+    // ===== 六吉六煞全盘解读 =====
+    html += '<div class="interp-card"><h3 id="zw-sec-stars">六吉六煞全盘解读</h3>';
+    html += '<p style="font-size:.84rem;color:var(--ink-light)">六吉星（文昌、文曲、左辅、右弼、天魁、天钺）和六煞星（擎羊、陀罗、火星、铃星、地空、地劫）散布在命盘各宫，对每个宫位的主星形成增益或干扰。以下逐一分析它们在您命盘中的位置和影响。</p>';
+
+    // Collect all 12 key minor stars across all palaces
+    var sixJi = ['文昌','文曲','左辅','右弼','天魁','天钺'];
+    var sixSha = ['擎羊','陀罗','火星','铃星','地空','地劫'];
+    var allTwelve = sixJi.concat(sixSha);
+
+    // 六吉星
+    html += '<h4 style="color:var(--jade)">六吉星</h4>';
+    sixJi.forEach(function(starName) {
+      var foundPalace = null, foundStar = null;
+      pals.forEach(function(p) {
+        (p.minorStars||[]).forEach(function(s) {
+          if (s.name === starName) { foundPalace = p; foundStar = s; }
+        });
+      });
+      if (!foundPalace) return;
+      var interp = minorInterp[starName]; if (!interp) return;
+      var b = foundStar.brightness || '';
+      var text = (b && interp[b]) ? interp[b] : interp.base;
+      var coStars = (foundPalace.majorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name});
+
+      html += '<div style="border-left:3px solid var(--jade);background:rgba(45,143,111,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
+      html += '<p><strong style="color:var(--jade)">' + starName + (b ? '（'+b+'）' : '') + '</strong> 在 <strong>' + foundPalace.name + '宫</strong>';
+      if (coStars.length) html += '（同宫：' + coStars.join('、') + '）';
+      html += '</p>';
+      html += '<p>' + text + '</p>';
+      html += '</div>';
+    });
+
+    // 六煞星
+    html += '<h4 style="color:#1a1a1a">六煞星</h4>';
+    sixSha.forEach(function(starName) {
+      var foundPalace = null, foundStar = null;
+      pals.forEach(function(p) {
+        (p.minorStars||[]).forEach(function(s) {
+          if (s.name === starName) { foundPalace = p; foundStar = s; }
+        });
+      });
+      if (!foundPalace) return;
+      var interp = minorInterp[starName]; if (!interp) return;
+      var b = foundStar.brightness || '';
+      var palaceName = foundPalace.name;
+
+      // For 地空地劫: use palace-specific text
+      var text = '';
+      if ((starName === '地空' || starName === '地劫') && interp[palaceName]) {
+        text = interp[palaceName];
+      } else if (b && interp[b]) {
+        text = interp[b];
+      } else {
+        text = interp.base;
+      }
+
+      var coStars = (foundPalace.majorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name});
+      var isWarn = b === '陷' || starName === '地空' || starName === '地劫';
+      var borderColor = isWarn ? '#dc2626' : '#1a1a1a';
+      var bgColor = isWarn ? 'rgba(220,38,38,.04)' : 'rgba(26,26,26,.03)';
+
+      html += '<div style="border-left:3px solid '+borderColor+';background:'+bgColor+';padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
+      html += '<p><strong style="color:'+borderColor+'">' + starName + (b ? '（'+b+'）' : '') + '</strong> 在 <strong>' + palaceName + '宫</strong>';
+      if (coStars.length) html += '（同宫：' + coStars.join('、') + '）';
+      html += '</p>';
+      html += '<p>' + text + '</p>';
+
+      // Special warnings for 地空地劫 with financial stars
+      if ((starName === '地空' || starName === '地劫') && coStars.length) {
+        var hasCai = ['武曲','天府','太阴'].some(function(s){return coStars.indexOf(s)>=0});
+        if (hasCai) html += '<p style="color:#dc2626;font-weight:600">' + starName + '与财星同宫，财运受损较重，有财难聚。</p>';
+      }
+      html += '</div>';
+    });
+
+    // 地空地劫同宫特别提示
+    var dkPal = null, djPal = null;
+    pals.forEach(function(p) {
+      (p.minorStars||[]).forEach(function(s) {
+        if (s.name === '地空') dkPal = p;
+        if (s.name === '地劫') djPal = p;
+      });
+    });
+    if (dkPal && djPal && dkPal.name === djPal.name) {
+      html += '<div style="border-left:4px solid #dc2626;background:rgba(220,38,38,.06);padding:12px 16px;margin:10px 0;border-radius:0 6px 6px 0">';
+      html += '<p><strong style="color:#dc2626;font-size:1rem">⚠ 地空地劫同宫（' + dkPal.name + '宫）</strong></p>';
+      html += '<p>空劫同宫是命盘中影响极大的组合。该宫位代表的领域会经历大起大落、从有到无再从无到有的轮回。但也代表此人在该领域有超越常人的悟性和突破能力。「置之死地而后生」正是空劫同宫者的写照。</p>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+
+    // ===== 十二宫位 =====
+    var kps = [{n:'官禄',t:'事业'},{n:'财帛',t:'财运'},{n:'夫妻',t:'感情'},{n:'子女',t:'子女桃花'},{n:'疾厄',t:'健康'},{n:'福德',t:'精神'},{n:'迁移',t:'外出'},{n:'田宅',t:'不动产'}];
+    html += '<div class="interp-card"><h3 id="zw-sec-palaces">重要宫位</h3>';
+    kps.forEach(function(kn, ki) {
+      var kp = pals.find(function(p){return p.name===kn.n}); if (!kp) return;
+      var mj = (kp.majorStars||[]).filter(function(s){return s.name});
+      var isDefault = (ki < 2); // 官禄和财帛默认展开
+      html += '<details class="yearly-detail"' + (isDefault ? ' open' : '') + '>';
+      html += '<summary class="yearly-summary"><span class="yr-palace">' + kn.n + '（' + kn.t + '）</span><span class="yr-gz">' + (kp.heavenlyStem||'')+(kp.earthlyBranch||'') + '</span>';
+      var starNames = mj.map(function(s){return s.name}).join(' ');
+      if (starNames) html += '<span class="yr-age">' + starNames + '</span>';
+      html += '</summary><div class="yearly-content">';
+      html += '<p>主星：' + (mj.map(function(s){return s.name+(s.brightness?'('+s.brightness+')':'')+(s.mutagen?' '+s.mutagen:'')}).join('、')||'无主星') + '</p>';
+      var pr = PALACE_READINGS[kn.n+'宫']; if (pr) mj.forEach(function(s){ if (pr.stars && pr.stars[s.name]) html += '<p>' + pr.stars[s.name] + '</p>'; });
+      html += '</div></details>';
+    });
+    html += '</div>';
+
+    // ===== 四化 =====
     // ===== 大运走势（每段可展开详解） =====
-    html += '<div class="interp-card"><h3>大运走势</h3>';
+    html += '<div class="interp-card"><h3 id="zw-sec-dayun">大运走势</h3>';
     html += '<p style="font-size:.84rem;color:var(--ink-light)">大运每十年一变，揭示人生不同阶段的运势主题。点击展开查看每段大运详解。</p>';
 
     // Scrollable timeline
@@ -2150,7 +2189,7 @@ const ZiWei = (function () {
     html += '</div>';
 
     // ===== 逐年运势展开（核心新功能） =====
-    html += '<div class="interp-card"><h3>逐年运势详解</h3>';
+    html += '<div class="interp-card"><h3 id="zw-sec-liunian">逐年运势详解</h3>';
     html += '<p style="font-size:.84rem;color:var(--ink-light)">点击展开查看每年详细运势。流年命宫入不同宫位，结合大运与流年四化综合论断。</p>';
 
     // Generate 15 years: from age 1 to current+5, grouped by 大运
