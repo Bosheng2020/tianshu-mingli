@@ -157,9 +157,29 @@ const FengShui = (() => {
     var guaGroup = GUA_GROUP[guaNum] || '西四命';
     var guaDirs = BA_ZHAI[guaNum] || {};
 
-    // 流年飞星
-    var currentYear = new Date().getFullYear();
-    var flyGrid = getYearFlyStars(currentYear);
+    // 流年飞星 — 以立春为准确定风水年
+    var now = new Date();
+    var solarYear = now.getFullYear();
+    var fsYear = solarYear; // 风水年
+    try {
+      // 用 lunar-javascript 获取今年立春日期
+      if (typeof Solar !== 'undefined') {
+        // 从1月底到2月中旬逐日找立春
+        for (var ld = 20; ld <= 40; ld++) {
+          var checkDate = new Date(solarYear, 0, ld); // Jan 20 to Feb 9
+          var ls = Solar.fromYmd(checkDate.getFullYear(), checkDate.getMonth()+1, checkDate.getDate());
+          var ll = ls.getLunar();
+          if (ll.getJieQi() === '立春') {
+            // Found 立春 date
+            if (now < new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate())) {
+              fsYear = solarYear - 1; // 立春前，用去年
+            }
+            break;
+          }
+        }
+      }
+    } catch(e) {}
+    var flyGrid = getYearFlyStars(fsYear);
 
     // Extract birth info for display
     var birthInfo = '';
@@ -171,7 +191,7 @@ const FengShui = (() => {
     var dayMasterWx = baziResult.dayMasterWuxing || '';
     var strengthDesc = baziResult.strengthDesc || '';
 
-    return { ys:ys, ys2:ys2, js:js, guaNum:guaNum, guaName:guaName, guaGroup:guaGroup, guaDirs:guaDirs, flyGrid:flyGrid, currentYear:currentYear, birthYear:birthYear, gender:gender, birthInfo:birthInfo, dayMasterWx:dayMasterWx, strengthDesc:strengthDesc };
+    return { ys:ys, ys2:ys2, js:js, guaNum:guaNum, guaName:guaName, guaGroup:guaGroup, guaDirs:guaDirs, flyGrid:flyGrid, currentYear:fsYear, birthYear:birthYear, gender:gender, birthInfo:birthInfo, dayMasterWx:dayMasterWx, strengthDesc:strengthDesc };
   }
 
   // ===== render =====
@@ -239,7 +259,7 @@ const FengShui = (() => {
 
     // ===== 2. 流年九宫飞星 =====
     html += '<div class="interp-card"><h3 id="fs-fly">' + result.currentYear + '年九宫飞星</h3>';
-    html += '<p style="font-size:.84rem;color:var(--ink-light)">流年飞星每年变化方位，揭示当年各方位的吉凶能量。据此调整家居布局可趋吉避凶。</p>';
+    html += '<p style="font-size:.84rem;color:var(--ink-light)">流年飞星每年变化方位（以立春为界，非正月初一），揭示当年各方位吉凶能量。每年自动更新。</p>';
 
     // 飞星九宫格
     html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:10px auto;max-width:400px;border:2px solid var(--ink);border-radius:8px;overflow:hidden">';
