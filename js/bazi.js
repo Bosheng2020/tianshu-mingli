@@ -598,6 +598,177 @@ const BaZi = (function () {
       }
     }
 
+    // ====== 调候用神 (tiaohou) ======
+    var tiaohou = null, tiaohouReason = '', needTiaohou = false;
+    (function() {
+      var mz = pillars[1].zhi;
+      var winterZhi = { '子': true, '丑': true, '亥': true };
+      var summerZhi = { '午': true, '未': true, '巳': true };
+      if (winterZhi[mz]) {
+        tiaohou = '丙';
+        needTiaohou = true;
+        tiaohouReason = '生于' + mz + '月（冬季寒冷），命局需丙火暖局调候。冬月水旺土寒金冷，非丙火不能解冻回春。';
+      } else if (summerZhi[mz]) {
+        tiaohou = '壬';
+        needTiaohou = true;
+        tiaohouReason = '生于' + mz + '月（夏季炎热），命局需壬水润局调候。夏月火炎土燥，非壬水不能滋润降温。';
+      } else {
+        tiaohouReason = '生于' + mz + '月，气候温和，不需特别调候。';
+      }
+    })();
+
+    // ====== 通关用神 (tongguan) ======
+    var tongguan = null, tongguanReason = '';
+    (function() {
+      var pct = elementPct;
+      // 五行相克循环中，两强相战需中间五行通关
+      var pairs = [
+        { a: '金', b: '木', bridge: '水', desc: '金木交战，水可通关：金生水、水生木，化干戈为玉帛。' },
+        { a: '木', b: '土', bridge: '火', desc: '木土交战，火可通关：木生火、火生土，使两强和解。' },
+        { a: '土', b: '水', bridge: '金', desc: '土水交战，金可通关：土生金、金生水，调和两方势力。' },
+        { a: '水', b: '火', bridge: '木', desc: '水火交战，木可通关：水生木、木生火，引导对立为合作。' },
+        { a: '火', b: '金', bridge: '土', desc: '火金交战，土可通关：火生土、土生金，缓解激烈冲突。' }
+      ];
+      for (var i = 0; i < pairs.length; i++) {
+        var p = pairs[i];
+        if (pct[p.a] >= 25 && pct[p.b] >= 25 && pct[p.bridge] < 10) {
+          tongguan = p.bridge;
+          tongguanReason = p.desc;
+          break;
+        }
+      }
+    })();
+
+    // ====== 综合用神 (finalYongShen) ======
+    var finalYongShen, finalYongShenMethod, finalYongShenReason;
+    (function() {
+      var tiaohouWx = tiaohou === '丙' ? '火' : tiaohou === '壬' ? '水' : null;
+      if (tiaohouWx && elementPct[tiaohouWx] < 25) {
+        finalYongShen = tiaohouWx;
+        finalYongShenMethod = '调候';
+        finalYongShenReason = '以调候为先：' + tiaohouReason + '且命局中' + tiaohouWx + '不旺（' + elementPct[tiaohouWx] + '%），确需补充。';
+      } else if (tongguan) {
+        finalYongShen = tongguan;
+        finalYongShenMethod = '通关';
+        finalYongShenReason = '以通关为要：' + tongguanReason;
+      } else {
+        finalYongShen = yongShen;
+        finalYongShenMethod = '扶抑';
+        finalYongShenReason = '以扶抑取用：' + yongShenReason;
+      }
+    })();
+
+    // ====== 地支关系 (zhiRelations) ======
+    var zhiRelations = [];
+    (function() {
+      var branches = [
+        { zhi: pillars[0].zhi, pillar: '年' },
+        { zhi: pillars[1].zhi, pillar: '月' },
+        { zhi: pillars[2].zhi, pillar: '日' },
+        { zhi: pillars[3].zhi, pillar: '时' }
+      ];
+
+      var chongPairs = { '子午':true, '午子':true, '丑未':true, '未丑':true, '寅申':true, '申寅':true,
+                         '卯酉':true, '酉卯':true, '辰戌':true, '戌辰':true, '巳亥':true, '亥巳':true };
+      var hePairs = { '子丑':'土', '丑子':'土', '寅亥':'木', '亥寅':'木', '卯戌':'火', '戌卯':'火',
+                      '辰酉':'金', '酉辰':'金', '巳申':'水', '申巳':'水', '午未':'火', '未午':'火' };
+      var haiPairs = { '子未':true, '未子':true, '丑午':true, '午丑':true, '寅巳':true, '巳寅':true,
+                       '卯辰':true, '辰卯':true, '申亥':true, '亥申':true, '酉戌':true, '戌酉':true };
+
+      for (var i = 0; i < 4; i++) {
+        for (var j = i + 1; j < 4; j++) {
+          var key = branches[i].zhi + branches[j].zhi;
+          if (chongPairs[key]) {
+            zhiRelations.push({ type: '冲', zhi1: branches[i].zhi, zhi2: branches[j].zhi,
+              pillar1: branches[i].pillar, pillar2: branches[j].pillar,
+              desc: branches[i].pillar + '支' + branches[i].zhi + '与' + branches[j].pillar + '支' + branches[j].zhi + '相冲，主变动、冲突。' });
+          }
+          if (hePairs[key]) {
+            zhiRelations.push({ type: '合', zhi1: branches[i].zhi, zhi2: branches[j].zhi,
+              pillar1: branches[i].pillar, pillar2: branches[j].pillar, heWx: hePairs[key],
+              desc: branches[i].pillar + '支' + branches[i].zhi + '与' + branches[j].pillar + '支' + branches[j].zhi + '六合化' + hePairs[key] + '，主和谐、合作。' });
+          }
+          if (haiPairs[key]) {
+            zhiRelations.push({ type: '害', zhi1: branches[i].zhi, zhi2: branches[j].zhi,
+              pillar1: branches[i].pillar, pillar2: branches[j].pillar,
+              desc: branches[i].pillar + '支' + branches[i].zhi + '与' + branches[j].pillar + '支' + branches[j].zhi + '相害，主暗伤、不和。' });
+          }
+        }
+      }
+
+      // 三刑 checks
+      var branchSet = {};
+      branches.forEach(function(b) { branchSet[b.zhi] = (branchSet[b.zhi] || 0) + 1; });
+
+      var xingGroups = [
+        { members: ['寅','巳','申'], name: '无恩之刑', desc: '寅巳申三刑（无恩之刑），主恩将仇报、忘恩负义之事。' },
+        { members: ['丑','戌','未'], name: '恃势之刑', desc: '丑戌未三刑（恃势之刑），主倚势凌人、骄横跋扈之象。' }
+      ];
+      xingGroups.forEach(function(g) {
+        var count = 0;
+        g.members.forEach(function(m) { if (branchSet[m]) count++; });
+        if (count >= 2) {
+          var present = g.members.filter(function(m) { return branchSet[m]; });
+          zhiRelations.push({ type: '刑', members: present, name: g.name,
+            desc: (count >= 3 ? '三' : '二') + '支齐见：' + g.desc });
+        }
+      });
+
+      // 子卯相刑（无礼之刑）
+      if (branchSet['子'] && branchSet['卯']) {
+        zhiRelations.push({ type: '刑', members: ['子','卯'], name: '无礼之刑',
+          desc: '子卯相刑（无礼之刑），主缺乏礼数、任性妄为。' });
+      }
+
+      // 自刑：辰辰、午午、酉酉、亥亥
+      ['辰','午','酉','亥'].forEach(function(z) {
+        if (branchSet[z] && branchSet[z] >= 2) {
+          zhiRelations.push({ type: '刑', members: [z, z], name: '自刑',
+            desc: z + z + '自刑，主自我矛盾、内心纠结。' });
+        }
+      });
+
+      // 三合局 checks
+      var sanHeGroups = [
+        { members: ['寅','午','戌'], wx: '火', desc: '寅午戌三合火局' },
+        { members: ['申','子','辰'], wx: '水', desc: '申子辰三合水局' },
+        { members: ['亥','卯','未'], wx: '木', desc: '亥卯未三合木局' },
+        { members: ['巳','酉','丑'], wx: '金', desc: '巳酉丑三合金局' }
+      ];
+      sanHeGroups.forEach(function(g) {
+        var count = 0;
+        g.members.forEach(function(m) { if (branchSet[m]) count++; });
+        if (count >= 3) {
+          zhiRelations.push({ type: '三合', members: g.members, wx: g.wx,
+            desc: g.desc + '，' + g.wx + '气大旺，力量倍增。' });
+        }
+      });
+    })();
+
+    // ====== 旬空 (xunKong) ======
+    var xunKong = '', xunKongDesc = '';
+    (function() {
+      try {
+        xunKong = ec.getDayXunKong();
+        if (xunKong && xunKong.length === 2) {
+          xunKongDesc = '日柱旬空为' + xunKong.charAt(0) + '、' + xunKong.charAt(1) + '。逢空则虚，空亡之支所代表的六亲或事项力量减弱。';
+        } else if (xunKong) {
+          xunKongDesc = '日柱旬空为' + xunKong + '。';
+        }
+      } catch(e) {
+        // getDayXunKong not available, compute manually
+        var gans = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+        var zhis = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+        var gI = gans.indexOf(pillars[2].gan);
+        var zI = zhis.indexOf(pillars[2].zhi);
+        var startZhi = ((zI - gI) % 12 + 12) % 12;
+        var k1 = zhis[(startZhi + 10) % 12];
+        var k2 = zhis[(startZhi + 11) % 12];
+        xunKong = k1 + k2;
+        xunKongDesc = '日柱旬空为' + k1 + '、' + k2 + '。逢空则虚，空亡之支所代表的六亲或事项力量减弱。';
+      }
+    })();
+
     // ShiShen count (use library's data)
     var shiShenCount = {};
     var supportCount = 0, drainCount = 0;
@@ -628,6 +799,11 @@ const BaZi = (function () {
       season: season, seasonLabel: seasonLabel, seasonFactor: seasonFactor, seasonWeights: seasonWeights,
       supportCount: supportCount, drainCount: drainCount, motherWx: motherWx,
       yongShen: yongShen, jiShen: jiShen, yongShenReason: yongShenReason, jiShenReason: jiShenReason,
+      tiaohou: tiaohou, tiaohouReason: tiaohouReason, needTiaohou: needTiaohou,
+      tongguan: tongguan, tongguanReason: tongguanReason,
+      finalYongShen: finalYongShen, finalYongShenMethod: finalYongShenMethod, finalYongShenReason: finalYongShenReason,
+      zhiRelations: zhiRelations,
+      xunKong: xunKong, xunKongDesc: xunKongDesc,
       shiShenCount: shiShenCount, dominantSS: dominantSS,
       gender: gender, zodiac: zodiac,
       taiYuan: taiYuan, taiXi: taiXi, mingGong: mingGong, shenGong: shenGong,
@@ -659,6 +835,8 @@ const BaZi = (function () {
 
     var pillarNames = ['年柱', '月柱', '日柱', '时柱'];
     var wxOrder = ['木', '火', '土', '金', '水'];
+    // Use comprehensive yongShen if available
+    var useYongShen = result.finalYongShen || result.yongShen;
 
     // ==================== 1. 真太阳时显示 ====================
     if (result._tst) {
@@ -727,6 +905,23 @@ const BaZi = (function () {
 
     html.push('</div>');
 
+    // ==================== 导航目录 ====================
+    html.push('<div class="interp-card" style="padding:12px 16px;text-align:center">');
+    html.push('<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">');
+    var bzNavItems = [
+      {id:'bz-sec-dm',label:'日主论命'},{id:'bz-sec-ys',label:'用神分析'},
+      {id:'bz-sec-wx',label:'五行分布'},{id:'bz-sec-ss',label:'十神格局'},
+      {id:'bz-sec-zhi',label:'地支关系'},{id:'bz-sec-career',label:'事业财运'},
+      {id:'bz-sec-love',label:'感情婚姻'},{id:'bz-sec-health',label:'健康'},
+      {id:'bz-sec-shensha',label:'神煞'},{id:'bz-sec-dayun',label:'大运流年'},
+      {id:'bz-sec-kaiyun',label:'开运方案'}
+    ];
+    bzNavItems.forEach(function(item) {
+      html.push('<a href="#' + item.id + '" style="display:inline-block;padding:5px 14px;border-radius:20px;font-size:.82rem;background:var(--cream,#faf8f5);border:1px solid var(--border,#e8e4dd);color:var(--ink,#1a1a2e);text-decoration:none;font-family:var(--font-h);transition:all .15s" onmouseover="this.style.background=\'var(--vermillion)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--cream,#faf8f5)\';this.style.color=\'var(--ink)\'">' + item.label + '</a>');
+    });
+    html.push('</div></div>');
+    html.push('<div style="text-align:center;margin:16px 0 8px;color:var(--ink-light);font-size:.85rem;letter-spacing:.15em">── 详 细 解 读 ──</div>');
+
     // ==================== 4. 纳音 ====================
     html.push('<div class="interp-card">');
     html.push('<h3>纳音五行</h3>');
@@ -739,7 +934,7 @@ const BaZi = (function () {
 
     // ==================== 5. 五行分布 ====================
     html.push('<div class="interp-card">');
-    html.push('<h3>五行力量分布</h3>');
+    html.push('<h3 id="bz-sec-wx">五行力量分布</h3>');
     html.push('<div class="element-bars">');
 
     var barColors = {'木':'bar-wood','火':'bar-fire','土':'bar-earth','金':'bar-metal','水':'bar-water'};
@@ -772,7 +967,7 @@ const BaZi = (function () {
 
     // ==================== 6. 日主旺衰分析 ====================
     html.push('<div class="interp-card">');
-    html.push('<h3>日主旺衰分析</h3>');
+    html.push('<h3 id="bz-sec-ys">日主旺衰分析</h3>');
 
     // 季节分析
     html.push('<h4>令分析（季节影响）</h4>');
@@ -832,19 +1027,57 @@ const BaZi = (function () {
     html.push('<tr><td style="font-size:1.05rem;font-weight:700">最终判断</td><td style="font-size:1.05rem"><strong style="color:var(--vermillion)">' + result.strengthDesc + '</strong></td></tr>');
     html.push('</tbody></table>');
 
-    // 用神忌神 — 深入解读
-    html.push('<h4>用神</h4>');
-    html.push('<div style="padding:14px 18px;background:rgba(45,143,111,.06);border-left:4px solid var(--jade,#2d8f6f);border-radius:0 4px 4px 0;margin:8px 0">');
-    html.push('<p style="font-size:1.1rem;font-weight:700;color:var(--jade,#2d8f6f);margin-bottom:6px">' + elBgSpan(' ' + result.yongShen + ' ', result.yongShen) + '</p>');
-    html.push('<p>' + result.yongShenReason + '</p>');
-    html.push('<p style="font-size:.85rem;margin-top:6px">实际应用：大运流年遇到五行属<strong>' + result.yongShen + '</strong>时运势上升。职业选择、居住方位、日常穿着等宜向' + result.yongShen + '靠拢。详见下方「开运方案」。</p>');
+    // 多维用神分析
+    html.push('<h4>多维用神分析</h4>');
+    html.push('<p style="font-size:.84rem;color:var(--ink-light)">传统命理取用神有调候、通关、扶抑三种方法，优先级为：调候 > 通关 > 扶抑。</p>');
+
+    // 综合用神结论
+    var fys = result.finalYongShen || result.yongShen;
+    var fysMethod = result.finalYongShenMethod || '扶抑';
+    var fysReason = result.finalYongShenReason || result.yongShenReason;
+    html.push('<div style="padding:16px 20px;background:rgba(45,143,111,.06);border:2px solid var(--jade,#2d8f6f);border-radius:8px;margin:10px 0">');
+    html.push('<p style="font-size:.78rem;color:var(--jade);font-weight:700;letter-spacing:.08em">综合用神（' + fysMethod + '取用）</p>');
+    html.push('<p style="font-size:1.3rem;font-weight:900;color:var(--jade);margin:6px 0">' + elBgSpan(' ' + fys + ' ', fys) + '</p>');
+    html.push('<p>' + fysReason + '</p>');
     html.push('</div>');
+
+    // 分项展示
+    html.push('<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0">');
+    // 调候
+    var thActive = result.needTiaohou && result.finalYongShenMethod === '调候';
+    html.push('<div style="padding:10px;border-radius:6px;background:' + (thActive ? 'rgba(45,143,111,.06)' : 'rgba(0,0,0,.02)') + ';border:1px solid ' + (thActive ? 'var(--jade)' : 'var(--border)') + ';text-align:center">');
+    html.push('<div style="font-size:.72rem;color:var(--ink-light)">调候用神</div>');
+    html.push('<div style="font-size:1rem;font-weight:700;margin:4px 0">' + (result.tiaohou || '不需调候') + '</div>');
+    if (thActive) html.push('<div style="font-size:.7rem;color:var(--jade)">✓ 采用</div>');
+    html.push('</div>');
+    // 通关
+    var tgActive = result.tongguan && result.finalYongShenMethod === '通关';
+    html.push('<div style="padding:10px;border-radius:6px;background:' + (tgActive ? 'rgba(45,143,111,.06)' : 'rgba(0,0,0,.02)') + ';border:1px solid ' + (tgActive ? 'var(--jade)' : 'var(--border)') + ';text-align:center">');
+    html.push('<div style="font-size:.72rem;color:var(--ink-light)">通关用神</div>');
+    html.push('<div style="font-size:1rem;font-weight:700;margin:4px 0">' + (result.tongguan || '不需通关') + '</div>');
+    if (tgActive) html.push('<div style="font-size:.7rem;color:var(--jade)">✓ 采用</div>');
+    html.push('</div>');
+    // 扶抑
+    var fyActive = result.finalYongShenMethod === '扶抑';
+    html.push('<div style="padding:10px;border-radius:6px;background:' + (fyActive ? 'rgba(45,143,111,.06)' : 'rgba(0,0,0,.02)') + ';border:1px solid ' + (fyActive ? 'var(--jade)' : 'var(--border)') + ';text-align:center">');
+    html.push('<div style="font-size:.72rem;color:var(--ink-light)">扶抑用神</div>');
+    html.push('<div style="font-size:1rem;font-weight:700;margin:4px 0">' + result.yongShen + '</div>');
+    if (fyActive) html.push('<div style="font-size:.7rem;color:var(--jade)">✓ 采用</div>');
+    html.push('</div>');
+    html.push('</div>');
+
+    // 调候详情
+    if (result.needTiaohou) {
+      html.push('<details class="yearly-detail"><summary class="yearly-summary"><span class="yr-palace">调候分析</span><span class="yr-gz">' + (result.tiaohou||'') + '</span></summary><div class="yearly-content"><p>' + result.tiaohouReason + '</p></div></details>');
+    }
+    if (result.tongguan) {
+      html.push('<details class="yearly-detail"><summary class="yearly-summary"><span class="yr-palace">通关分析</span><span class="yr-gz">' + result.tongguan + '</span></summary><div class="yearly-content"><p>' + result.tongguanReason + '</p></div></details>');
+    }
 
     html.push('<h4>忌神</h4>');
     html.push('<div style="padding:14px 18px;background:rgba(197,61,67,.05);border-left:4px solid var(--vermillion,#c53d43);border-radius:0 4px 4px 0;margin:8px 0">');
     html.push('<p style="font-size:1.1rem;font-weight:700;color:var(--vermillion,#c53d43);margin-bottom:6px">' + elBgSpan(' ' + result.jiShen + ' ', result.jiShen) + '</p>');
     html.push('<p>' + result.jiShenReason + '</p>');
-    html.push('<p style="font-size:.85rem;margin-top:6px">实际应用：大运流年遇到五行属<strong>' + result.jiShen + '</strong>时运势下降。应尽量避免忌神方位和颜色，少从事忌神五行相关的行业。</p>');
     html.push('</div>');
 
     // 喜忌一览表
@@ -879,7 +1112,7 @@ const BaZi = (function () {
     var dmi = result.dayMasterInfo;
     if (dmi && dmi.label) {
       html.push('<div class="interp-card">');
-      html.push('<h3>日主论命 —— ' + dmi.label + '</h3>');
+      html.push('<h3 id="bz-sec-dm">日主论命 —— ' + dmi.label + '</h3>');
       html.push('<p style="font-style:italic;opacity:.8">' + dmi.nature + ' · ' + dmi.summary + '</p>');
 
       html.push('<h4>性格特质</h4><p>' + dmi.personality + '</p>');
@@ -893,7 +1126,7 @@ const BaZi = (function () {
 
     // ==================== 8. 十神分布 ====================
     html.push('<div class="interp-card">');
-    html.push('<h3>十神分布</h3>');
+    html.push('<h3 id="bz-sec-ss">十神分布</h3>');
 
     var allSS = ['比肩', '劫财', '食神', '伤官', '偏财', '正财', '七杀', '正官', '偏印', '正印'];
     html.push('<table class="info-table shishen-table"><thead><tr><th>十神</th><th>力量</th><th>含义</th></tr></thead><tbody>');
@@ -952,9 +1185,54 @@ const BaZi = (function () {
 
     html.push('</div>');
 
+    // ==================== 9.5 地支关系 ====================
+    if (result.zhiRelations && result.zhiRelations.length > 0) {
+      html.push('<div class="interp-card">');
+      html.push('<h3 id="bz-sec-zhi">地支关系</h3>');
+      html.push('<p style="font-size:.84rem;color:var(--ink-light)">四柱地支之间的冲、合、刑、害关系，揭示命局中的矛盾与助力。</p>');
+
+      var zhiIcons = {'冲':'⚡','合':'🤝','三合':'🔺','刑':'⚠️','害':'💔','自刑':'🔄'};
+      var zhiColors = {'冲':'#dc2626','合':'#16a34a','三合':'#16a34a','刑':'#d97706','害':'#9333ea','自刑':'#64748b'};
+
+      result.zhiRelations.forEach(function(rel) {
+        var icon = zhiIcons[rel.type] || '•';
+        var color = zhiColors[rel.type] || 'var(--ink)';
+        var isGood = (rel.type === '合' || rel.type === '三合');
+        var bg = isGood ? 'rgba(22,163,74,.04)' : 'rgba(220,38,38,.04)';
+        html.push('<div style="border-left:3px solid '+color+';background:'+bg+';padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">');
+        html.push('<p><strong style="color:'+color+'">' + icon + ' ' + rel.pillar1 + '支' + rel.zhi1 + ' ' + rel.type + ' ' + rel.pillar2 + '支' + rel.zhi2 + '</strong></p>');
+        if (rel.desc) html.push('<p style="font-size:.88rem">' + rel.desc + '</p>');
+        html.push('</div>');
+      });
+      html.push('</div>');
+    }
+
+    // ==================== 9.6 旬空 ====================
+    if (result.xunKong) {
+      html.push('<div class="interp-card">');
+      html.push('<h4>旬空（空亡）</h4>');
+      html.push('<p>日柱旬空：<strong>' + result.xunKong + '</strong></p>');
+      if (result.xunKongDesc) html.push('<p>' + result.xunKongDesc + '</p>');
+
+      // Check if any pillar branch is in xunKong
+      var xkChars = result.xunKong.split('');
+      var xkHit = [];
+      result.pillars.forEach(function(p) {
+        for (var xi = 0; xi < xkChars.length; xi++) {
+          if (p.zhi === xkChars[xi]) xkHit.push(p.name + '支' + p.zhi);
+        }
+      });
+      if (xkHit.length > 0) {
+        html.push('<p style="color:var(--vermillion)"><strong>命中落空：' + xkHit.join('、') + '</strong> — 空亡的地支代表的领域容易落空、不实或延迟。但空亡逢冲则填实，逢合则解空。空亡也可能代表超脱世俗的特质。</p>');
+      } else {
+        html.push('<p>四柱地支均未落入旬空，命局较为充实。</p>');
+      }
+      html.push('</div>');
+    }
+
     // ==================== 10. 事业财运分析 ====================
     html.push('<div class="interp-card">');
-    html.push('<h3>事业财运分析</h3>');
+    html.push('<h3 id="bz-sec-career">事业财运分析</h3>');
 
     var careerByWx = {
       '木': '教育、文化、出版、林业、家具、服装、医药、公务员等与木相关的行业',
@@ -1001,7 +1279,7 @@ const BaZi = (function () {
 
     // ==================== 11. 感情婚姻分析 ====================
     html.push('<div class="interp-card">');
-    html.push('<h3>感情婚姻分析</h3>');
+    html.push('<h3 id="bz-sec-love">感情婚姻分析</h3>');
 
     var isMale = (result.gender === 'male');
     var spouseStar1 = isMale ? '正财' : '正官';
@@ -1051,7 +1329,7 @@ const BaZi = (function () {
 
     // ==================== 12. 健康提示 ====================
     html.push('<div class="interp-card">');
-    html.push('<h3>健康养生提示</h3>');
+    html.push('<h3 id="bz-sec-health">健康养生提示</h3>');
 
     // 基于日主五行
     var dmHealth = HEALTH_MAP[result.dayMasterWuxing];
@@ -1111,7 +1389,7 @@ const BaZi = (function () {
     // ==================== 12.6 大运流年 ====================
     if (result.dayunList && result.dayunList.length > 0) {
       html.push('<div class="interp-card">');
-      html.push('<h3>大运走势</h3>');
+      html.push('<h3 id="bz-sec-dayun">大运走势</h3>');
       html.push('<p style="font-size:.84rem;color:var(--ink-light)">大运每十年一变，揭示人生各阶段的运势主题。点击展开查看详细解读和逐年流年。</p>');
 
       // Timeline
@@ -1324,7 +1602,7 @@ const BaZi = (function () {
 
     // ==================== 13. 神煞与特殊格局 ====================
     html.push('<div class="interp-card">');
-    html.push('<h3>命局特殊信号</h3>');
+    html.push('<h3 id="bz-sec-shensha">神煞与特殊格局</h3>');
 
     var specialFound = false;
     var pArr = result.pillars;
@@ -1433,7 +1711,7 @@ const BaZi = (function () {
 
     // ==================== 14. 综合开运方案 ====================
     html.push('<div class="interp-card">');
-    html.push('<h3>综合开运方案</h3>');
+    html.push('<h3 id="bz-sec-kaiyun">综合开运方案</h3>');
     html.push('<p style="font-size:.84rem;color:var(--ink-light)">以下建议均基于命局用神 <strong>' + result.yongShen + '</strong> 制定，旨在通过后天调整补充命局所需五行，趋吉避凶。</p>');
 
     var ys = result.yongShen;
