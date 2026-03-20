@@ -1153,7 +1153,7 @@ const ZiWei = (function () {
           // 1. Major stars (14主星) with brightness + mutagen
           (p.majorStars||[]).forEach(function(s) {
             if (!s.name) return;
-            html += '<span class="star main-star">' + s.name;
+            html += '<span class="star main-star" data-star-name="' + s.name + '">' + s.name;
             if (s.brightness) html += '<sub>' + s.brightness + '</sub>';
             html += '</span>';
             if (s.mutagen) {
@@ -1168,7 +1168,7 @@ const ZiWei = (function () {
           (p.minorStars||[]).forEach(function(s) {
             if (!s.name) return;
             var cls = goodMinor.indexOf(s.name)>=0 ? 'lucky-star' : badMinor.indexOf(s.name)>=0 ? 'unlucky-star' : 'aux-star';
-            html += '<span class="star ' + cls + '">' + s.name + (s.brightness ? '<sub>' + s.brightness + '</sub>' : '') + '</span>';
+            html += '<span class="star ' + cls + '" data-star-name="' + s.name + '">' + s.name + (s.brightness ? '<sub>' + s.brightness + '</sub>' : '') + '</span>';
             if (s.mutagen) {
               var mt2 = s.mutagen;
               var hc2 = (mt2==='忌'||mt2==='化忌')?'hua-ji':(mt2==='禄'||mt2==='化禄')?'hua-lu':(mt2==='权'||mt2==='化权')?'hua-quan':'hua-ke';
@@ -1350,8 +1350,22 @@ const ZiWei = (function () {
         }
       };
 
+      // Reset all cell styles and star highlights
       document.querySelectorAll('.ziwei-cell').forEach(function(c){c.style.outline='none';c.style.backgroundColor=''});
+      document.querySelectorAll('.star[data-star-name]').forEach(function(s){s.style.backgroundColor='';s.style.borderRadius='';s.style.padding='';s.style.boxShadow=''});
       el.style.outline = '2px solid #c5922e';
+
+      // Highlight the 4 飞星四化 target stars in the grid with corresponding colors
+      var huaBg = ['rgba(22,163,74,.2)','rgba(217,119,6,.2)','rgba(37,99,235,.2)','rgba(220,38,38,.2)'];
+      var huaBorder = ['#16a34a','#d97706','#2563eb','#dc2626'];
+      row.forEach(function(star, i) {
+        document.querySelectorAll('.star[data-star-name="'+star+'"]').forEach(function(el) {
+          el.style.backgroundColor = huaBg[i];
+          el.style.borderRadius = '3px';
+          el.style.padding = '0 3px';
+          el.style.boxShadow = '0 0 0 1.5px ' + huaBorder[i];
+        });
+      });
 
       // 三方四正高亮: 对宫 + 两个三合宫
       // Palace idx 0-11 maps to branch positions: 0=寅,1=卯,...,11=丑
@@ -2036,7 +2050,7 @@ const ZiWei = (function () {
     }
     html += '</div>';
 
-    // ===== 三方四正解读 =====
+    // ===== 三方四正深度解读 =====
     if (mingIdx >= 0) {
       var mingP = pals[mingIdx];
       var duiPos = (mingP.pos + 6) % 12;
@@ -2046,55 +2060,253 @@ const ZiWei = (function () {
       var sh1Pal = pals.find(function(p){return p.pos===sh1Pos});
       var sh2Pal = pals.find(function(p){return p.pos===sh2Pos});
 
-      html += '<div class="interp-card"><h3 id="zw-sec-sfszh">命宫三方四正</h3>';
-      html += '<p style="font-size:.84rem;color:var(--ink-light)">三方四正是紫微斗数论命的核心视角。命宫的三方包括对宫（迁移）和两个三合宫，这四个宫位的星曜共同决定命主的综合运势。</p>';
+      html += '<div class="interp-card"><h3 id="zw-sec-sfszh">命宫三方四正深度解读</h3>';
+      html += '<p style="font-size:.84rem;color:var(--ink-light)">三方四正是紫微斗数论命的核心视角。命宫与对宫（迁移宫）形成一条轴线，代表内在与外在；两个三合宫从侧面汇聚能量。四宫星曜共振，方为完整命格。只看命宫不看三方，如同管中窥豹。</p>';
 
-      // 列出四个宫位
+      // 主星在三方四正中的深度解读数据
+      var starSFSZ = {
+        '紫微':{ming:'帝星坐命，天生领袖气质，好面子重尊严，有统驭能力。',dui:'外在气场强大，在社交场合有王者风范，易获得尊重。',sanhe:'紫微从三合位借力，暗中有贵人扶持，关键时刻有大人物相助。'},
+        '天机':{ming:'聪慧灵活，善于思考谋略，但也容易想多犹豫不决。',dui:'在外表现机敏善变，善于察言观色和见机行事。',sanhe:'天机从侧方助力，思维能力好，善于从不同角度分析问题。'},
+        '太阳':{ming:'性格光明磊落，热情大方，乐于助人，但容易操劳。',dui:'外在表现慷慨大度，社交能力强，人缘极佳。',sanhe:'太阳从三合照入，仍有贵人运和名气运，做事较受关注。'},
+        '武曲':{ming:'刚毅果断，财星坐命，行动力强，适合经商理财。',dui:'在外表现雷厉风行，做事讲效率，商业嗅觉灵敏。',sanhe:'武曲三合来会，增强赚钱能力和理财天赋，适合投资。'},
+        '天同':{ming:'性情温和，与世无争，有福星之质。年轻辛苦，晚运渐佳。',dui:'外表温和亲切，给人如沐春风之感。人际关系和谐。',sanhe:'天同三合照入，增加福气和享受，晚年生活安逸舒适。'},
+        '廉贞':{ming:'廉贞坐命性情刚烈，爱恨分明。化禄时善于交际，化忌则容易偏执。',dui:'在外表现强势有主见，社交中不轻易妥协。',sanhe:'廉贞三合来会，增加竞争意识和进取心，但也增添固执。'},
+        '天府':{ming:'稳重大方，天府为库星，善于守财聚财。为人宽厚有格局。',dui:'外在表现沉稳可靠，给人信任感。社交中有长者风范。',sanhe:'天府三合来照，守财能力增强，生活较有保障和安全感。'},
+        '太阴':{ming:'细腻敏感，内心丰富。女命端庄贤淑，男命温文尔雅。',dui:'外表温柔含蓄，气质优雅。社交中较为低调内敛。',sanhe:'太阴三合照入，增添文艺气质和审美品味，宜从事文创。'},
+        '贪狼':{ming:'多才多艺，交际能力强，桃花旺。善于抓住机会但需防贪心。',dui:'外在魅力十足，社交场上的焦点人物。异性缘极佳。',sanhe:'贪狼三合来会，增加应变能力和社交运，但也增添欲望。'},
+        '巨门':{ming:'口才出众，善于分析辩论。是非星坐命，需防口舌招尤。',dui:'在外表现能言善道，适合教学、律师等口才相关行业。',sanhe:'巨门三合照入，分析判断力增强，但也容易招惹是非。'},
+        '天相':{ming:'正直厚道，衣食无忧。印星坐命，适合公职或辅助领导。',dui:'外在形象端正，给人忠厚可靠之感。社交得体有分寸。',sanhe:'天相三合来照，增添印星之力，文书运好，贵人相助。'},
+        '天梁':{ming:'清高正直，逢凶化吉之星。善于排忧解难，有长者缘。',dui:'外表给人老成持重之感，在外易得年长贵人提携。',sanhe:'天梁三合照入，化解灾厄能力增强，一生多次逢凶化吉。'},
+        '七杀':{ming:'刚烈果断，开创力极强。七杀坐命不怕挑战，越挫越勇。',dui:'外在气势逼人，给人强势有魄力之感。社交中较为主导。',sanhe:'七杀三合来会，增强开创力和行动力，但也增添波折。'},
+        '破军':{ming:'变动之星，喜欢打破现状。一生多变化起伏，先破后成。',dui:'外在表现不按常理出牌，敢于冒险挑战。',sanhe:'破军三合照入，增加变动和不确定性，但也带来新机会。'},
+        '天府':{ming:'稳重大方，天府为库星，善于守财聚财。',dui:'外在沉稳可靠，给人信任感。',sanhe:'天府三合来照，守财能力增强。'}
+      };
+
+      // 辅星交互解读
+      var auxSFSZ = {
+        '文昌':{effect:'增添文才学识，利考试升学和文书事务。'},
+        '文曲':{effect:'增添才艺和表达能力，利口才和艺术创作。'},
+        '左辅':{effect:'贵人星，得朋友同事助力，团队协作有利。'},
+        '右弼':{effect:'贵人星，暗中有人相助，做事较顺遂。'},
+        '天魁':{effect:'阳贵人，得男性长辈提携，面试求职有利。'},
+        '天钺':{effect:'阴贵人，得女性长辈或贵人暗助。'},
+        '禄存':{effect:'正财之星，增强稳定收入和财务基础。'},
+        '天马':{effect:'驿马星，增添活动力和变动，利出外发展。'},
+        '擎羊':{effect:'刑克之星，增添冲劲但也带来冲突和伤害。做事急躁。'},
+        '陀罗':{effect:'拖延纠缠之星，事情反复拖延，容易钻牛角尖。'},
+        '火星':{effect:'暴烈之星，性急冲动，但爆发力极强。与贪狼同宫反为吉。'},
+        '铃星':{effect:'阴火之星，内心焦虑烦闷。与贪狼同宫可成「铃贪格」。'},
+        '地空':{effect:'空亡之星，不利物质追求，但利哲学宗教和创意思维。'},
+        '地劫':{effect:'劫财之星，财来财去守不住。但利从事高新科技或创新行业。'}
+      };
+
+      // 四化在三方四正的影响
+      var huaSFSZ = {
+        '化禄':'化禄为福气之源，三方四正见禄，做事顺利有贵人，财运畅通。',
+        '化权':'化权为权力之象，三方四正见权，有掌控力和决断力，事业上有实权。',
+        '化科':'化科为名声之星，三方四正见科，有学识口碑，贵人运好，考试顺利。',
+        '化忌':'化忌为执念之象，三方四正见忌，该领域有困扰和阻碍，需格外注意化解。'
+      };
+
+      // 列出四个宫位 with deep analysis
       var sfszPals = [
-        {pal:mingP, label:'命宫（本宫）', role:'自身本质'},
-        {pal:duiPal, label:(duiPal?duiPal.name:'迁移')+'（对宫）', role:'外在表现、社交'},
-        {pal:sh1Pal, label:(sh1Pal?sh1Pal.name:'')+'（三合）', role:'辅助力量'},
-        {pal:sh2Pal, label:(sh2Pal?sh2Pal.name:'')+'（三合）', role:'辅助力量'}
+        {pal:mingP, label:'命宫（本宫）', role:'自身本质、性格核心', pos:'ming'},
+        {pal:duiPal, label:(duiPal?duiPal.name:'迁移')+'（对宫）', role:'外在表现、社交形象', pos:'dui'},
+        {pal:sh1Pal, label:(sh1Pal?sh1Pal.name:'')+'（三合宫）', role:'侧面助力', pos:'sanhe'},
+        {pal:sh2Pal, label:(sh2Pal?sh2Pal.name:'')+'（三合宫）', role:'侧面助力', pos:'sanhe'}
       ];
+
+      var goodMinorList = ['文昌','文曲','左辅','右弼','天魁','天钺','禄存','天马'];
+      var badMinorList = ['擎羊','陀罗','火星','铃星','地空','地劫'];
 
       sfszPals.forEach(function(item) {
         if (!item.pal) return;
         var p = item.pal;
-        var majors = (p.majorStars||[]).filter(function(s){return s.name}).map(function(s){
-          return s.name + (s.brightness?'('+s.brightness+')':'') + (s.mutagen?' '+s.mutagen:'');
-        });
-        var minors = (p.minorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name});
-        var isGood = minors.some(function(n){return ['文昌','文曲','左辅','右弼','天魁','天钺','禄存','天马'].indexOf(n)>=0});
-        var isBad = minors.some(function(n){return ['擎羊','陀罗','火星','铃星','地空','地劫'].indexOf(n)>=0});
+        var isMing = (item.pos === 'ming');
+        var majors = (p.majorStars||[]).filter(function(s){return s.name});
+        var minors = (p.minorStars||[]).filter(function(s){return s.name});
+        var goodM = minors.filter(function(s){return goodMinorList.indexOf(s.name)>=0});
+        var badM = minors.filter(function(s){return badMinorList.indexOf(s.name)>=0});
+        var mutagenStars = majors.concat(minors).filter(function(s){return s.mutagen});
 
-        html += '<div style="border-left:3px solid '+(item.pal===mingP?'var(--vermillion)':'var(--border)')+';padding:8px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
-        html += '<p><strong>' + item.label + '</strong> ' + (p.heavenlyStem||'')+(p.earthlyBranch||'') + ' <span style="font-size:.8rem;color:var(--ink-light)">' + item.role + '</span></p>';
-        html += '<p>主星：' + (majors.join('、')||'无主星') + '</p>';
-        if (minors.length) html += '<p style="font-size:.85rem">辅星：' + minors.join('、') + '</p>';
+        var borderColor = isMing ? 'var(--vermillion)' : 'var(--gold,#c5922e)';
+        html += '<div style="border-left:3px solid '+borderColor+';padding:10px 14px;margin:8px 0;border-radius:0 8px 8px 0;background:rgba(0,0,0,.015)">';
+        html += '<p style="margin-bottom:6px"><strong style="font-size:1rem">' + item.label + '</strong> ' + (p.heavenlyStem||'')+(p.earthlyBranch||'') + ' <span style="font-size:.8rem;color:var(--ink-light)">' + item.role + '</span></p>';
+
+        // 主星列表
+        var majorNames = majors.map(function(s){
+          return s.name + (s.brightness?'<sub style="font-size:.7rem;color:var(--ink-light)">'+s.brightness+'</sub>':'') + (s.mutagen?' <span style="font-size:.78rem;color:'+(s.mutagen.indexOf('忌')>=0?'#dc2626':s.mutagen.indexOf('禄')>=0?'#16a34a':s.mutagen.indexOf('权')>=0?'#d97706':'#2563eb')+'">'+s.mutagen+'</span>':'');
+        });
+        html += '<p style="margin:4px 0">主星：' + (majorNames.join('、')||'<span style="color:var(--ink-light)">无主星（借对宫星曜）</span>') + '</p>';
+        if (minors.length) {
+          var minorDisp = minors.map(function(s){
+            var c = goodMinorList.indexOf(s.name)>=0?'var(--jade)':badMinorList.indexOf(s.name)>=0?'var(--vermillion)':'var(--ink-light)';
+            return '<span style="color:'+c+'">'+s.name+'</span>';
+          });
+          html += '<p style="font-size:.85rem;margin:3px 0">辅星：' + minorDisp.join('、') + '</p>';
+        }
+
+        // 主星深度解读
+        majors.forEach(function(s) {
+          var info = starSFSZ[s.name];
+          if (info) {
+            var txt = item.pos === 'ming' ? info.ming : item.pos === 'dui' ? info.dui : info.sanhe;
+            if (txt) {
+              html += '<p style="font-size:.84rem;color:#4a5568;margin:4px 0 2px;padding-left:8px;border-left:2px solid rgba(0,0,0,.08)"><strong>' + s.name + '</strong>：' + txt + '</p>';
+            }
+          }
+        });
+
+        // 无主星时的解读
+        if (majors.length === 0) {
+          html += '<p style="font-size:.84rem;color:#4a5568;margin:4px 0;padding-left:8px;border-left:2px solid rgba(0,0,0,.08)">无主星坐守，需借对宫主星力量。性格和运势受辅星影响较大，为人较灵活善变。</p>';
+        }
+
+        // 辅星影响
+        var keyAux = goodM.concat(badM);
+        if (keyAux.length > 0) {
+          html += '<div style="margin-top:4px">';
+          keyAux.forEach(function(s) {
+            var info = auxSFSZ[s.name];
+            if (info) {
+              var isGood = goodMinorList.indexOf(s.name) >= 0;
+              html += '<p style="font-size:.82rem;margin:2px 0;padding-left:8px;border-left:2px solid '+(isGood?'var(--jade)':'var(--vermillion)')+'"><span style="color:'+(isGood?'var(--jade)':'var(--vermillion)')+'">'+s.name+'</span>：' + info.effect + '</p>';
+            }
+          });
+          html += '</div>';
+        }
+
+        // 四化影响
+        if (mutagenStars.length > 0) {
+          mutagenStars.forEach(function(s) {
+            var mt = s.mutagen;
+            var fullMt = mt.length === 1 ? '化' + mt : mt;
+            var interpTxt = huaSFSZ[fullMt];
+            if (interpTxt) {
+              html += '<p style="font-size:.82rem;margin:3px 0;padding-left:8px;border-left:2px dashed var(--gold)"><span style="color:var(--gold)">'+s.name+' '+fullMt+'</span>：' + interpTxt + '</p>';
+            }
+          });
+        }
+
         html += '</div>';
       });
 
-      // 综合评价
-      var totalMajors = [];
-      var totalGood = 0, totalBad = 0;
+      // ===== 综合评价：星曜组合分析 =====
+      var totalMajors = [], totalGood = 0, totalBad = 0, totalHua = {};
+      var allSfszStars = [];
       sfszPals.forEach(function(item) {
         if (!item.pal) return;
-        (item.pal.majorStars||[]).forEach(function(s){if(s.name)totalMajors.push(s.name)});
+        (item.pal.majorStars||[]).forEach(function(s){
+          if(s.name) { totalMajors.push(s.name); allSfszStars.push(s); }
+          if(s.mutagen) { var fm = s.mutagen.length===1?'化'+s.mutagen:s.mutagen; totalHua[fm] = (totalHua[fm]||0)+1; }
+        });
         (item.pal.minorStars||[]).forEach(function(s){
-          if(['文昌','文曲','左辅','右弼','天魁','天钺','禄存','天马'].indexOf(s.name)>=0) totalGood++;
-          if(['擎羊','陀罗','火星','铃星','地空','地劫'].indexOf(s.name)>=0) totalBad++;
+          if(goodMinorList.indexOf(s.name)>=0) totalGood++;
+          if(badMinorList.indexOf(s.name)>=0) totalBad++;
+          if(s.mutagen) { var fm = s.mutagen.length===1?'化'+s.mutagen:s.mutagen; totalHua[fm] = (totalHua[fm]||0)+1; }
         });
       });
 
-      html += '<h4>三方四正综合评价</h4>';
-      html += '<p>三方四正共有 <strong>' + totalMajors.length + '</strong> 颗主星、<strong style="color:var(--jade)">' + totalGood + '</strong> 颗吉星、<strong style="color:var(--vermillion)">' + totalBad + '</strong> 颗煞星。</p>';
-      if (totalGood > totalBad + 2) {
-        html += '<p style="color:var(--jade)">三方四正吉星远多于煞星，命主整体运势优越。做事多贵人相助，逢凶化吉能力强。</p>';
-      } else if (totalBad > totalGood + 2) {
-        html += '<p style="color:var(--vermillion)">三方四正煞星较多，命主人生挑战较大。但煞星也代表行动力和魄力，善用则为助力。需特别注意化解煞星的负面影响。</p>';
-      } else {
-        html += '<p>三方四正吉凶参半，命主运势有起有落。关键在于把握吉星带来的机会，化解煞星带来的挑战。</p>';
+      html += '<h4 style="margin-top:16px">三方四正综合评价</h4>';
+      // 星曜统计条
+      html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin:8px 0">';
+      html += '<span>主星 <strong>' + totalMajors.length + '</strong> 颗</span>';
+      html += '<span style="color:var(--jade)">吉星 <strong>' + totalGood + '</strong> 颗</span>';
+      html += '<span style="color:var(--vermillion)">煞星 <strong>' + totalBad + '</strong> 颗</span>';
+      var huaKeys = Object.keys(totalHua);
+      if (huaKeys.length) {
+        html += '<span style="color:var(--gold)">四化：' + huaKeys.map(function(k){return k+'×'+totalHua[k]}).join('、') + '</span>';
       }
+      html += '</div>';
+
+      // 主星组合判读
+      var hasZiWei = totalMajors.indexOf('紫微') >= 0;
+      var hasTianFu = totalMajors.indexOf('天府') >= 0;
+      var hasQiSha = totalMajors.indexOf('七杀') >= 0;
+      var hasPoJun = totalMajors.indexOf('破军') >= 0;
+      var hasTanLang = totalMajors.indexOf('贪狼') >= 0;
+      var hasTaiYang = totalMajors.indexOf('太阳') >= 0;
+      var hasTaiYin = totalMajors.indexOf('太阴') >= 0;
+      var hasWuQu = totalMajors.indexOf('武曲') >= 0;
+      var hasTianTong = totalMajors.indexOf('天同') >= 0;
+      var hasTianLiang = totalMajors.indexOf('天梁') >= 0;
+      var hasTianJi = totalMajors.indexOf('天机') >= 0;
+      var hasJuMen = totalMajors.indexOf('巨门') >= 0;
+      var hasTianXiang = totalMajors.indexOf('天相') >= 0;
+      var hasLianZhen = totalMajors.indexOf('廉贞') >= 0;
+
+      html += '<div style="padding:10px 14px;background:rgba(197,146,46,.04);border:1px solid var(--border);border-radius:8px;margin:8px 0">';
+
+      // 星系格局分析
+      var comboTexts = [];
+      if (hasZiWei && hasTianFu) comboTexts.push('紫府同在三方四正，帝星与库星交辉，格局上乘。为人有气度又能守成，事业财运兼备，适合稳中求进。');
+      if (hasQiSha && hasPoJun && hasTanLang) comboTexts.push('杀破狼三星聚于三方四正，人生充满变动和挑战。开创力极强但波折也大，适合创业或变革性行业。成就往往大起大落，需要果断的决策力。');
+      if (hasTaiYang && hasTaiYin) comboTexts.push('日月同在三方四正，阴阳调和，性格刚柔并济。男命事业家庭兼顾，女命内外兼修。若日月庙旺则更为出色。');
+      if (hasWuQu && hasTianFu) comboTexts.push('武曲天府同在三方，双财星照命，理财能力一流，一生衣食无忧。适合金融、投资等行业。');
+      if (hasTianTong && hasTianLiang) comboTexts.push('天同天梁同在三方，福星荫星交辉。一生逢凶化吉，晚运尤其安逸。但年轻时可能缺乏冲劲。');
+      if (hasTianJi && hasTianLiang) comboTexts.push('天机天梁同在三方，智慧型组合。思维敏捷且正直善良，适合策划、咨询、学术等需要动脑的工作。');
+      if (hasJuMen && hasTaiYang) comboTexts.push('巨门太阳同在三方，太阳之光化解巨门之暗。口才出众且有正义感，适合教育、法律、传媒等行业。');
+      if (hasLianZhen && hasQiSha) comboTexts.push('廉贞七杀同在三方，性格刚烈果决。事业心极强，敢闯敢拼，适合军警、运动、竞争激烈的行业。');
+      if (hasZiWei && hasQiSha) comboTexts.push('紫微七杀同在三方，帝星驾杀星，有统帅之才。适合带领团队冲锋陷阵，能将压力转化为动力。');
+      if (hasTianXiang && hasLianZhen) comboTexts.push('廉贞天相同在三方，官星印星交辉。利公职仕途，做事有原则又不失灵活。需注意廉贞的情绪化倾向。');
+
+      if (comboTexts.length > 0) {
+        html += '<p style="font-weight:700;margin-bottom:6px;color:var(--gold)">星系组合特征</p>';
+        comboTexts.forEach(function(t) {
+          html += '<p style="font-size:.88rem;margin:4px 0">' + t + '</p>';
+        });
+      }
+
+      // 吉凶平衡分析
+      html += '<p style="font-weight:700;margin:10px 0 6px;color:var(--gold)">吉凶平衡</p>';
+      if (totalGood >= 4 && totalBad <= 1) {
+        html += '<p style="font-size:.88rem;color:var(--jade)">三方四正吉星云集，极为难得！贵人运极佳，做事顺风顺水，一生多有助力。应善用这份福气，多行善事以增福报。</p>';
+      } else if (totalGood > totalBad + 1) {
+        html += '<p style="font-size:.88rem;color:var(--jade)">吉星多于煞星，整体运势良好。贵人相助多，做事较为顺利。少数煞星反而增添行动力，可谓吉中带劲。</p>';
+      } else if (totalBad >= 4 && totalGood <= 1) {
+        html += '<p style="font-size:.88rem;color:var(--vermillion)">三方四正煞星较重，人生考验较多。但煞星也代表无畏的勇气和强大的执行力。历经磨炼后往往能成就非凡事业。关键在于修身养性，化煞为用。</p>';
+      } else if (totalBad > totalGood + 1) {
+        html += '<p style="font-size:.88rem;color:var(--vermillion)">煞星多于吉星，行事需多加谨慎。虽然挑战较多，但煞星之人往往更有魄力和行动力。建议稳扎稳打，不宜冒进。配合大运吉时积极把握机会。</p>';
+      } else {
+        html += '<p style="font-size:.88rem">吉凶参半，命局较为平衡。运势有起有落，属于需要自身努力来决定成败的格局。把握吉星时机进取，煞星时期蛰伏修炼，张弛有度方为上策。</p>';
+      }
+
+      // 四化在三方四正的综合影响
+      if (huaKeys.length > 0) {
+        html += '<p style="font-weight:700;margin:10px 0 6px;color:var(--gold)">四化影响</p>';
+        if (totalHua['化禄'] && totalHua['化权']) {
+          html += '<p style="font-size:.88rem;color:var(--jade)">三方四正见禄权交会，名利双收之象。事业财运均有强大助力，把握机遇可成大器。</p>';
+        }
+        if (totalHua['化禄'] && totalHua['化科']) {
+          html += '<p style="font-size:.88rem;color:var(--jade)">三方四正见禄科交会，福气与名声兼得。做事既有实惠又有面子，贵人运极佳。</p>';
+        }
+        if (totalHua['化忌'] && !totalHua['化禄'] && !totalHua['化科']) {
+          html += '<p style="font-size:.88rem;color:var(--vermillion)">三方四正见化忌而无禄科化解，命主在相关领域压力较大。需格外注意化忌所在宫位代表的事项，量力而行。</p>';
+        } else if (totalHua['化忌'] && (totalHua['化禄'] || totalHua['化科'])) {
+          html += '<p style="font-size:.88rem">虽有化忌带来压力，但有化' + (totalHua['化禄']?'禄':'科') + '化解。困难中仍有转机，逢凶化吉的概率较高。</p>';
+        }
+        if (totalHua['化权'] && totalHua['化忌']) {
+          html += '<p style="font-size:.88rem">权忌交会于三方四正：有掌控力但也有执念。在追求目标的过程中容易因太过执着而给自己压力。适度放手反而能获得更好的结果。</p>';
+        }
+      }
+
+      // 事业建议
+      html += '<p style="font-weight:700;margin:10px 0 6px;color:var(--gold)">综合建议</p>';
+      var advices = [];
+      if (hasWuQu || hasTianFu) advices.push('财星强旺，宜从事金融、理财、商贸等与钱财相关的行业。');
+      if (hasTaiYang) advices.push('太阳照三方，适合公开性的工作如教育、媒体、政治等。男命尤利公职。');
+      if (hasTaiYin) advices.push('太阴入三方，适合幕后工作或需要细腻心思的行业如设计、策划、研究。');
+      if (hasTanLang) advices.push('贪狼入三方，交际能力强。适合销售、公关、娱乐等需要人脉的行业。');
+      if (hasTianJi) advices.push('天机入三方，头脑灵活。适合策略规划、技术研发等需要智慧的工作。');
+      if (hasQiSha || hasPoJun) advices.push('杀破入三方，开创力强。适合创业、军警、运动或变革性行业。不宜安于现状。');
+      if (totalGood >= 3) advices.push('贵人运佳，在团队合作中更能发挥优势。多与人合作可事半功倍。');
+      if (totalBad >= 3) advices.push('煞星较多，独立作战反而更能发挥实力。可考虑自主创业或技术类岗位。');
+      if (advices.length === 0) advices.push('三方四正配置均衡，各行各业皆可发展。关键在于找到自身兴趣所在，坚持深耕。');
+      advices.forEach(function(a) {
+        html += '<p style="font-size:.88rem;margin:3px 0">• ' + a + '</p>';
+      });
+
+      html += '</div>';
       html += '</div>';
     }
 
