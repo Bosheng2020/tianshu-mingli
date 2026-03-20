@@ -47,7 +47,7 @@ app.use(express.json());
 // Static files — exclude /api/ routes so they hit Express handlers first
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
-  express.static(__dirname)(req, res, next);
+  express.static(__dirname, {maxAge: 0, etag: false})(req, res, next);
 });
 
 // ===== Analytics: 访问统计 + 生辰记录 =====
