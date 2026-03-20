@@ -616,6 +616,10 @@
                     };
                     document.getElementById('bazi-result').innerHTML = BaZi.render(baziData);
 
+                    // Store for personalized daily fortune
+                    _lastBaziData = baziData;
+                    renderDaily();
+
                     // Auto-scroll dayun/liuyue timelines to current position
                     setTimeout(function() {
                         ['bz-dayun-scroll','bz-liuyue-scroll'].forEach(function(id) {
@@ -869,6 +873,113 @@
 
     // ===== UX: Auto scroll to result after paipan =====
     // (Already handled in setTimeout callbacks above)
+
+    // ===== 今日宜忌 =====
+    var _lastBaziData = null; // Store for personalized daily fortune
+    function renderDaily() {
+        var dailyDiv = document.getElementById('daily-result');
+        if (dailyDiv && typeof Daily !== 'undefined') {
+            try { dailyDiv.innerHTML = Daily.render(_lastBaziData); }
+            catch(e) { dailyDiv.innerHTML = '<div class="interp-card"><p style="color:red">今日宜忌加载出错：'+e.message+'</p></div>'; }
+        }
+    }
+    // Render on page load
+    setTimeout(renderDaily, 200);
+
+    // ===== 合婚/合盘：初始化表单选项 =====
+    function initPairForm(prefix) {
+        [1,2].forEach(function(n) {
+            var yearSel = document.getElementById(prefix+'-year'+n);
+            var monthSel = document.getElementById(prefix+'-month'+n);
+            var daySel = document.getElementById(prefix+'-day'+n);
+            var hourSel = document.getElementById(prefix+'-hour'+n);
+            if (!yearSel) return;
+            // Years
+            for (var y = 2010; y >= 1940; y--) {
+                var o = document.createElement('option'); o.value = y; o.textContent = y+'年';
+                if (y === 1990) o.selected = true;
+                yearSel.appendChild(o);
+            }
+            // Months
+            for (var m = 1; m <= 12; m++) {
+                var o2 = document.createElement('option'); o2.value = m; o2.textContent = m+'月';
+                monthSel.appendChild(o2);
+            }
+            // Days
+            for (var d = 1; d <= 31; d++) {
+                var o3 = document.createElement('option'); o3.value = d; o3.textContent = d+'日';
+                daySel.appendChild(o3);
+            }
+            // Hours (时辰)
+            var shichen = ['子时(23-1)','丑时(1-3)','寅时(3-5)','卯时(5-7)','辰时(7-9)','巳时(9-11)',
+                           '午时(11-13)','未时(13-15)','申时(15-17)','酉时(17-19)','戌时(19-21)','亥时(21-23)'];
+            var shichenHours = [0,2,4,6,8,10,12,14,16,18,20,22];
+            shichen.forEach(function(s, i) {
+                var o4 = document.createElement('option'); o4.value = shichenHours[i]; o4.textContent = s;
+                hourSel.appendChild(o4);
+            });
+        });
+    }
+    initPairForm('hh');
+    initPairForm('pt');
+
+    function getPairPerson(prefix, n) {
+        return {
+            year: parseInt(document.getElementById(prefix+'-year'+n).value),
+            month: parseInt(document.getElementById(prefix+'-month'+n).value),
+            day: parseInt(document.getElementById(prefix+'-day'+n).value),
+            hour: parseInt(document.getElementById(prefix+'-hour'+n).value),
+            minute: 0,
+            gender: document.querySelector('input[name="'+prefix+'-gender'+n+'"]:checked').value,
+            name: document.getElementById(prefix+'-name'+n).value || (n===1?'甲方':'乙方')
+        };
+    }
+
+    // ===== 八字合婚 =====
+    var hhForm = document.getElementById('hehun-form');
+    if (hhForm) {
+        hhForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var resultDiv = document.getElementById('hehun-result');
+            resultDiv.innerHTML = '<div class="loading">合婚分析中</div>';
+            setTimeout(function() {
+                try {
+                    var p1 = getPairPerson('hh', 1);
+                    var p2 = getPairPerson('hh', 2);
+                    var result = HeHun.analyze(p1, p2);
+                    resultDiv.innerHTML = HeHun.render(result);
+                    try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'hehun'})}); } catch(e2){}
+                } catch(err) {
+                    resultDiv.innerHTML = '<div class="interp-card"><p style="color:red">合婚分析出错：'+err.message+'</p></div>';
+                    console.error('HeHun error:', err);
+                }
+                resultDiv.scrollIntoView({behavior:'smooth',block:'start'});
+            }, 500);
+        });
+    }
+
+    // ===== 事业合盘 =====
+    var ptForm = document.getElementById('partner-form');
+    if (ptForm) {
+        ptForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var resultDiv = document.getElementById('partner-result');
+            resultDiv.innerHTML = '<div class="loading">合盘分析中</div>';
+            setTimeout(function() {
+                try {
+                    var p1 = getPairPerson('pt', 1);
+                    var p2 = getPairPerson('pt', 2);
+                    var result = Partner.analyze(p1, p2);
+                    resultDiv.innerHTML = Partner.render(result);
+                    try { fetch('/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feature:'partner'})}); } catch(e2){}
+                } catch(err) {
+                    resultDiv.innerHTML = '<div class="interp-card"><p style="color:red">合盘分析出错：'+err.message+'</p></div>';
+                    console.error('Partner error:', err);
+                }
+                resultDiv.scrollIntoView({behavior:'smooth',block:'start'});
+            }, 500);
+        });
+    }
 
     // ===== UX: Back to top button =====
     var topBtn = document.getElementById('back-to-top');

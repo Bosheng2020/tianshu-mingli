@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#1a1a2e">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/favicon.svg">
-    <title>天枢命理 — 八字 · 紫微斗数 · 梅花易数 · 观音灵签 · 风水</title>
+    <title>天枢命理 — 八字 · 紫微斗数 · 梅花易数 · 观音灵签 · 风水 · 合婚</title>
     <link rel="stylesheet" href="css/style.css?t=1773980798">
     <style>.cdn-loading{position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#c53d43,#c5922e,#c53d43);background-size:200%;height:3px;animation:cdnSlide 1.5s ease infinite}@keyframes cdnSlide{0%{background-position:200%}100%{background-position:0%}}</style>
     <div class="cdn-loading" id="cdn-loading"></div>
@@ -21,7 +21,7 @@
 <header>
     <div class="header-inner">
         <h1>天枢命理</h1>
-        <p class="subtitle">八字 · 紫微斗数 · 梅花易数 · 观音灵签 · 风水堪舆</p>
+        <p class="subtitle">八字 · 紫微斗数 · 合婚配对 · 梅花易数 · 观音灵签 · 风水堪舆</p>
     </div>
 </header>
 
@@ -73,10 +73,17 @@
 <!-- Tab groups -->
 <nav class="tabs" id="main-tabs">
     <div class="container tab-scroll">
+        <span class="tab-group-label">每日</span>
+        <button class="tab active" data-tab="daily">今日宜忌</button>
+        <span class="tab-divider"></span>
         <span class="tab-group-label">命理</span>
-        <button class="tab active" data-tab="bazi">八字命盘</button>
+        <button class="tab" data-tab="bazi">八字命盘</button>
         <button class="tab" data-tab="ziwei">紫微斗数</button>
-        <button class="tab" data-tab="fengshui">风水建议</button>
+        <button class="tab" data-tab="fengshui">风水堪舆</button>
+        <span class="tab-divider"></span>
+        <span class="tab-group-label">配对</span>
+        <button class="tab" data-tab="hehun">八字合婚</button>
+        <button class="tab" data-tab="partner">事业合盘</button>
         <span class="tab-divider"></span>
         <span class="tab-group-label">占卜</span>
         <button class="tab" data-tab="meihua">梅花易数</button>
@@ -86,8 +93,15 @@
 </nav>
 
 <main class="container">
+    <!-- 今日宜忌 -->
+    <section id="daily" class="tab-content active">
+        <div id="daily-result" class="result-area">
+            <div class="loading">加载今日黄历</div>
+        </div>
+    </section>
+
     <!-- 八字 -->
-    <section id="bazi" class="tab-content active">
+    <section id="bazi" class="tab-content">
         <div id="bazi-result" class="result-area">
             <div class="placeholder-card"><div class="placeholder-icon">卦</div><p>请在上方输入出生信息后点击「开始排盘」</p></div>
         </div>
@@ -172,6 +186,66 @@
         <div id="qian-result" class="result-area"></div>
     </section>
 
+    <!-- 八字合婚 -->
+    <section id="hehun" class="tab-content">
+        <div class="interp-card">
+            <h2>八字合婚</h2>
+            <p class="section-note" style="text-align:center;border:none;padding:0">输入双方出生信息，从日主配合、年支合冲、用神互补、属相纳音等维度综合评判婚姻缘分。</p>
+            <form id="hehun-form">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0">
+                    <!-- 甲方 -->
+                    <div style="padding:12px;border:1px solid var(--vermillion);border-radius:var(--r-lg);background:rgba(197,61,67,.02)">
+                        <p style="font-weight:700;color:var(--vermillion);text-align:center;margin-bottom:8px">甲方</p>
+                        <div class="form-group"><label>姓名(选填)</label><input type="text" id="hh-name1" placeholder="甲方"></div>
+                        <div class="form-group"><label>出生日期</label><div class="date-inputs"><select id="hh-year1"></select><select id="hh-month1"></select><select id="hh-day1"></select></div></div>
+                        <div class="form-group"><label>出生时辰</label><select id="hh-hour1"></select></div>
+                        <div class="form-group"><label>性别</label><div class="radio-group"><label><input type="radio" name="hh-gender1" value="male" checked> 男</label><label><input type="radio" name="hh-gender1" value="female"> 女</label></div></div>
+                    </div>
+                    <!-- 乙方 -->
+                    <div style="padding:12px;border:1px solid #2563eb;border-radius:var(--r-lg);background:rgba(37,99,235,.02)">
+                        <p style="font-weight:700;color:#2563eb;text-align:center;margin-bottom:8px">乙方</p>
+                        <div class="form-group"><label>姓名(选填)</label><input type="text" id="hh-name2" placeholder="乙方"></div>
+                        <div class="form-group"><label>出生日期</label><div class="date-inputs"><select id="hh-year2"></select><select id="hh-month2"></select><select id="hh-day2"></select></div></div>
+                        <div class="form-group"><label>出生时辰</label><select id="hh-hour2"></select></div>
+                        <div class="form-group"><label>性别</label><div class="radio-group"><label><input type="radio" name="hh-gender2" value="male"> 男</label><label><input type="radio" name="hh-gender2" value="female" checked> 女</label></div></div>
+                    </div>
+                </div>
+                <div style="text-align:center"><button type="submit" class="btn btn-primary" style="font-size:1.1rem;padding:14px 40px">开始合婚</button></div>
+            </form>
+        </div>
+        <div id="hehun-result" class="result-area"></div>
+    </section>
+
+    <!-- 事业合盘 -->
+    <section id="partner" class="tab-content">
+        <div class="interp-card">
+            <h2>事业合盘</h2>
+            <p class="section-note" style="text-align:center;border:none;padding:0">分析双方八字在事业层面的配合度，包括日主互动、财星配合、十神角色分工，为合伙决策提供参考。</p>
+            <form id="partner-form">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0">
+                    <!-- 甲方 -->
+                    <div style="padding:12px;border:1px solid var(--gold);border-radius:var(--r-lg);background:rgba(197,146,46,.02)">
+                        <p style="font-weight:700;color:var(--gold);text-align:center;margin-bottom:8px">甲方</p>
+                        <div class="form-group"><label>姓名(选填)</label><input type="text" id="pt-name1" placeholder="甲方"></div>
+                        <div class="form-group"><label>出生日期</label><div class="date-inputs"><select id="pt-year1"></select><select id="pt-month1"></select><select id="pt-day1"></select></div></div>
+                        <div class="form-group"><label>出生时辰</label><select id="pt-hour1"></select></div>
+                        <div class="form-group"><label>性别</label><div class="radio-group"><label><input type="radio" name="pt-gender1" value="male" checked> 男</label><label><input type="radio" name="pt-gender1" value="female"> 女</label></div></div>
+                    </div>
+                    <!-- 乙方 -->
+                    <div style="padding:12px;border:1px solid var(--gold);border-radius:var(--r-lg);background:rgba(197,146,46,.02)">
+                        <p style="font-weight:700;color:var(--gold);text-align:center;margin-bottom:8px">乙方</p>
+                        <div class="form-group"><label>姓名(选填)</label><input type="text" id="pt-name2" placeholder="乙方"></div>
+                        <div class="form-group"><label>出生日期</label><div class="date-inputs"><select id="pt-year2"></select><select id="pt-month2"></select><select id="pt-day2"></select></div></div>
+                        <div class="form-group"><label>出生时辰</label><select id="pt-hour2"></select></div>
+                        <div class="form-group"><label>性别</label><div class="radio-group"><label><input type="radio" name="pt-gender2" value="male" checked> 男</label><label><input type="radio" name="pt-gender2" value="female"> 女</label></div></div>
+                    </div>
+                </div>
+                <div style="text-align:center"><button type="submit" class="btn btn-primary" style="font-size:1.1rem;padding:14px 40px">开始合盘</button></div>
+            </form>
+        </div>
+        <div id="partner-result" class="result-area"></div>
+    </section>
+
     <!-- 掷筊 -->
     <section id="jiaobei" class="tab-content">
         <div class="interp-card" style="text-align:center">
@@ -214,6 +288,9 @@
 <script src="js/meihua.js?t=1773980798"></script>
 <script src="js/fengshui.js?t=1773980798"></script>
 <script src="js/lingqian.js?t=1773980798"></script>
+<script src="js/daily.js?t=1773980798"></script>
+<script src="js/hehun.js?t=1773980798"></script>
+<script src="js/partner.js?t=1773980798"></script>
 <script src="js/app.js?t=1773980798"></script>
 </body>
 </html>
