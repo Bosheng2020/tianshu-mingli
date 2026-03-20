@@ -40,6 +40,19 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     expires_at DATETIME NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS analytics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL,
+    ip TEXT,
+    ua TEXT,
+    data TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE TABLE IF NOT EXISTS kv (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // ===== Middleware =====
@@ -50,32 +63,49 @@ app.use((req, res, next) => {
   express.static(__dirname, {maxAge: 0, etag: false})(req, res, next);
 });
 
-// ===== Analytics: 访问统计 + 生辰记录 =====
+// ===== Analytics: 访问统计 + 生辰记录 (SQLite持久化) =====
 const fs = require('fs');
-const LOG_FILE = path.join(__dirname, 'analytics.jsonl');
-const stats = { totalVisits: 0, totalPaipan: 0, features: {}, startTime: new Date().toISOString() };
+const serverStartTime = new Date().toISOString();
 
 function getClientIP(req) {
   return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
     req.headers['x-real-ip'] || req.connection?.remoteAddress || 'unknown';
 }
 
+// 写入分析事件到SQLite
+const insertAnalytics = db.prepare('INSERT INTO analytics (type, ip, ua, data) VALUES (?, ?, ?, ?)');
 function logEvent(type, data, req) {
-  const entry = {
-    time: new Date().toISOString(),
-    type: type,
-    ip: getClientIP(req),
-    ua: (req.headers['user-agent'] || '').substring(0, 150),
-    ...data
-  };
-  try { fs.appendFileSync(LOG_FILE, JSON.stringify(entry) + '\n'); } catch(e) {}
-  return entry;
+  try {
+    insertAnalytics.run(type, getClientIP(req), (req.headers['user-agent'] || '').substring(0, 150), JSON.stringify(data));
+  } catch(e) { console.error('Analytics write error:', e.message); }
 }
+
+// 迁移旧的 analytics.jsonl 数据到 SQLite（仅首次）
+const LOG_FILE = path.join(__dirname, 'analytics.jsonl');
+try {
+  const migrated = db.prepare("SELECT value FROM kv WHERE key = 'jsonl_migrated'").get();
+  if (!migrated && fs.existsSync(LOG_FILE)) {
+    console.log('[Analytics] 迁移 analytics.jsonl → SQLite...');
+    const lines = fs.readFileSync(LOG_FILE, 'utf8').trim().split('\n');
+    const migrateInsert = db.transaction((entries) => {
+      entries.forEach(line => {
+        try {
+          const e = JSON.parse(line);
+          db.prepare('INSERT INTO analytics (type, ip, ua, data, created_at) VALUES (?, ?, ?, ?, ?)').run(
+            e.type || 'unknown', e.ip || '', (e.ua || '').substring(0, 150), JSON.stringify(e), e.time || new Date().toISOString()
+          );
+        } catch(e2) {}
+      });
+    });
+    migrateInsert(lines);
+    db.prepare("INSERT OR REPLACE INTO kv (key, value) VALUES ('jsonl_migrated', 'true')").run();
+    console.log(`[Analytics] 迁移完成，共 ${lines.length} 条记录`);
+  }
+} catch(e) { console.error('Migration error:', e.message); }
 
 // Track page visits
 app.use((req, res, next) => {
   if (req.path === '/' || req.path === '/index.html') {
-    stats.totalVisits++;
     logEvent('visit', {}, req);
   }
   next();
@@ -84,8 +114,6 @@ app.use((req, res, next) => {
 // API: Record paipan (排盘记录)
 app.post('/api/record', (req, res) => {
   const { year, month, day, hour, minute, city, province, gender, feature } = req.body || {};
-  stats.totalPaipan++;
-  stats.features[feature || 'bazi'] = (stats.features[feature || 'bazi'] || 0) + 1;
   logEvent('paipan', { year, month, day, hour, minute, city, province, gender, feature }, req);
   res.json({ ok: true });
 });
@@ -94,20 +122,41 @@ app.post('/api/record', (req, res) => {
 app.get('/api/stats', (req, res) => {
   if (req.query.key !== 'tianshu2026') return res.status(403).json({ error: '无权访问' });
 
-  // Read recent logs
-  let recentLogs = [];
   try {
-    const lines = fs.readFileSync(LOG_FILE, 'utf8').trim().split('\n').slice(-100);
-    recentLogs = lines.map(l => { try { return JSON.parse(l); } catch(e) { return null; } }).filter(Boolean);
-  } catch(e) {}
+    const totalVisits = db.prepare("SELECT COUNT(*) as c FROM analytics WHERE type = 'visit'").get().c;
+    const totalPaipan = db.prepare("SELECT COUNT(*) as c FROM analytics WHERE type = 'paipan'").get().c;
 
-  res.json({
-    stats: stats,
-    uptime: process.uptime(),
-    recentPaipan: recentLogs.filter(l => l.type === 'paipan').slice(-50),
-    recentVisits: recentLogs.filter(l => l.type === 'visit').length,
-    totalLogs: recentLogs.length
-  });
+    // 功能使用统计
+    const featureRows = db.prepare("SELECT json_extract(data, '$.feature') as feature, COUNT(*) as c FROM analytics WHERE type = 'paipan' GROUP BY feature").all();
+    const features = {};
+    featureRows.forEach(r => { features[r.feature || 'bazi'] = r.c; });
+
+    // 最近记录
+    const recentPaipan = db.prepare("SELECT type, ip, data, created_at as time FROM analytics WHERE type = 'paipan' ORDER BY id DESC LIMIT 50").all()
+      .map(r => { try { return { ...JSON.parse(r.data), type: r.type, ip: r.ip, time: r.time }; } catch(e) { return r; } });
+
+    const recentVisitCount = db.prepare("SELECT COUNT(*) as c FROM analytics WHERE type = 'visit' AND created_at > datetime('now', '-24 hours')").get().c;
+
+    // 今日统计
+    const todayVisits = db.prepare("SELECT COUNT(*) as c FROM analytics WHERE type = 'visit' AND date(created_at) = date('now')").get().c;
+    const todayPaipan = db.prepare("SELECT COUNT(*) as c FROM analytics WHERE type = 'paipan' AND date(created_at) = date('now')").get().c;
+
+    // 独立IP数
+    const uniqueIPs = db.prepare("SELECT COUNT(DISTINCT ip) as c FROM analytics").get().c;
+
+    res.json({
+      stats: { totalVisits, totalPaipan, features, startTime: serverStartTime },
+      uptime: process.uptime(),
+      recentPaipan,
+      recentVisits: recentVisitCount,
+      todayVisits,
+      todayPaipan,
+      uniqueIPs,
+      totalLogs: db.prepare("SELECT COUNT(*) as c FROM analytics").get().c
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ===== Helper: Generate 6-digit code =====

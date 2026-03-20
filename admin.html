@@ -134,18 +134,17 @@ function loadData() {
       document.getElementById('stats-grid').innerHTML =
         '<div class="stat-card"><div class="stat-num">' + s.totalVisits + '</div><div class="stat-label">总访问量</div></div>' +
         '<div class="stat-card"><div class="stat-num">' + s.totalPaipan + '</div><div class="stat-label">总排盘次数</div></div>' +
-        '<div class="stat-card"><div class="stat-num">' + (features.paipan || 0) + '</div><div class="stat-label">八字/紫微/风水</div></div>' +
-        '<div class="stat-card"><div class="stat-num">' + (features.lingqian || 0) + '</div><div class="stat-label">观音灵签</div></div>' +
-        '<div class="stat-card"><div class="stat-num">' + (features.jiaobei || 0) + '</div><div class="stat-label">掷筊问事</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + (data.todayVisits || 0) + '</div><div class="stat-label">今日访问</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + (data.todayPaipan || 0) + '</div><div class="stat-label">今日排盘</div></div>' +
+        '<div class="stat-card"><div class="stat-num">' + (data.uniqueIPs || 0) + '</div><div class="stat-label">独立IP数</div></div>' +
         '<div class="stat-card"><div class="stat-num">' + data.totalLogs + '</div><div class="stat-label">总日志条数</div></div>';
 
       // Feature chart
-      var maxVal = Math.max(features.paipan||1, features.lingqian||1, features.jiaobei||1, 1);
-      var chartItems = [
-        {name:'排盘',val:features.paipan||0,color:'#6366f1'},
-        {name:'灵签',val:features.lingqian||0,color:'#f59e0b'},
-        {name:'掷筊',val:features.jiaobei||0,color:'#06b6d4'}
-      ];
+      var allFeatureNames = Object.keys(features);
+      var maxVal = Math.max.apply(null, allFeatureNames.map(function(k){return features[k]}).concat([1]));
+      var featureColors = {bazi:'#6366f1',ziwei:'#8b5cf6',fengshui:'#10b981',lingqian:'#f59e0b',jiaobei:'#06b6d4',meihua:'#ec4899',hehun:'#ef4444',partner:'#f97316'};
+      var featureLabels = {bazi:'八字',ziwei:'紫微',fengshui:'风水',lingqian:'灵签',jiaobei:'掷筊',meihua:'梅花',hehun:'合婚',partner:'合盘'};
+      var chartItems = allFeatureNames.map(function(k){return {name:featureLabels[k]||k, val:features[k]||0, color:featureColors[k]||'#6366f1'}});
       var chartHtml = '<div class="feature-bar">';
       chartItems.forEach(function(item) {
         var h = Math.max(item.val / maxVal * 100, 5);
@@ -163,9 +162,10 @@ function loadData() {
 
       var tableHtml = '';
       records.forEach(function(r, idx) {
-        var tag = r.feature === 'lingqian' ? '<span class="tag tag-lingqian">灵签</span>' :
-                  r.feature === 'jiaobei' ? '<span class="tag tag-jiaobei">掷筊</span>' :
-                  '<span class="tag tag-paipan">排盘</span>';
+        var tagMap = {lingqian:'灵签',jiaobei:'掷筊',meihua:'梅花',hehun:'合婚',partner:'合盘',bazi:'八字',ziwei:'紫微',fengshui:'风水'};
+        var tagClass = {lingqian:'tag-lingqian',jiaobei:'tag-jiaobei'};
+        var fname = r.feature || 'bazi';
+        var tag = '<span class="tag ' + (tagClass[fname]||'tag-paipan') + '">' + (tagMap[fname]||'排盘') + '</span>';
         var birth = '';
         if (r.year) birth = r.year + '-' + (r.month||'?') + '-' + (r.day||'?') + ' ' + (r.hour != null ? r.hour+':'+String(r.minute||0).padStart(2,'0') : '');
         var location = (r.province||'') + (r.city ? ' '+r.city : '');
