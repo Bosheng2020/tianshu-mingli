@@ -1483,7 +1483,7 @@ const BaZi = (function () {
         var isYS = dyWx === result.yongShen;
         var isJS = dyWx === result.jiShen;
 
-        html.push('<div class="dayun-item' + (isCur?' current':'') + (isPast?' past':'') + '" style="position:relative' + (isCur?';border-color:var(--vermillion);box-shadow:0 0 0 2px rgba(197,61,67,.2)':'') + '">');
+        html.push('<div class="dayun-item' + (isCur?' current':'') + (isPast?' past':'') + '" style="position:relative">');
         // Age range
         html.push('<div class="dayun-age">' + dy.startAge + '~' + (dy.startAge+9) + '岁</div>');
         // GanZhi with color
@@ -1497,7 +1497,7 @@ const BaZi = (function () {
         if (isYS) html.push('<div style="position:absolute;top:-6px;right:-4px;background:var(--jade);color:#fff;font-size:.6rem;padding:1px 4px;border-radius:3px;font-weight:700">喜</div>');
         if (isJS) html.push('<div style="position:absolute;top:-6px;right:-4px;background:var(--vermillion);color:#fff;font-size:.6rem;padding:1px 4px;border-radius:3px;font-weight:700">忌</div>');
         // Current indicator
-        if (isCur) html.push('<div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:.65rem;color:var(--vermillion);font-weight:700;white-space:nowrap">▲ 当前</div>');
+        if (isCur) html.push('<div style="font-size:.65rem;color:var(--vermillion);font-weight:700;margin-top:2px">● 当前</div>');
         html.push('</div>');
       });
       html.push('</div>');
@@ -1764,7 +1764,7 @@ const BaZi = (function () {
           var wxColor = lmWx==='木'?'var(--wood)':lmWx==='火'?'var(--fire)':lmWx==='土'?'var(--earth)':lmWx==='金'?'var(--metal)':'var(--water)';
           var monthLabel = monthCNNames[lm.monthCN] || (lm.monthCN + '月');
 
-          html.push('<div class="dayun-item' + (isCurMonth?' current':'') + '" style="min-width:88px;position:relative' + (isCurMonth?';border-color:var(--vermillion);box-shadow:0 0 0 2px rgba(197,61,67,.2)':'') + '">');
+          html.push('<div class="dayun-item' + (isCurMonth?' current':'') + '" style="min-width:88px;position:relative">');
           html.push('<div style="font-size:1.2rem">' + interp.icon + '</div>');
           html.push('<div class="dayun-age" style="font-size:.72rem">' + monthLabel + '</div>');
           html.push('<div class="dayun-gz" style="font-size:.95rem;font-weight:700;font-family:var(--font-h)">' + lm.ganZhi + '</div>');
@@ -1772,7 +1772,7 @@ const BaZi = (function () {
           html.push('<div style="font-size:.72rem;font-weight:600;color:' + (isYS?'var(--jade)':isJS?'var(--vermillion)':'var(--gold)') + ';margin-top:1px">' + interp.summary + '</div>');
           if (isYS) html.push('<div style="position:absolute;top:-5px;right:-3px;background:var(--jade);color:#fff;font-size:.55rem;padding:1px 3px;border-radius:2px;font-weight:700">喜</div>');
           if (isJS) html.push('<div style="position:absolute;top:-5px;right:-3px;background:var(--vermillion);color:#fff;font-size:.55rem;padding:1px 3px;border-radius:2px;font-weight:700">忌</div>');
-          if (isCurMonth) html.push('<div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--vermillion);font-weight:700;white-space:nowrap">▲ 本月</div>');
+          if (isCurMonth) html.push('<div style="font-size:.6rem;color:var(--vermillion);font-weight:700;margin-top:2px">● 本月</div>');
           html.push('</div>');
         });
         html.push('</div>');

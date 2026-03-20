@@ -191,7 +191,7 @@ select:focus,input:focus{outline:none;border-color:var(--vermillion);box-shadow:
 .palace-grid .center-cell:nth-child(15){grid-column:2;grid-row:3}.palace-grid .center-cell:nth-child(16){grid-column:3;grid-row:3}
 
 /* ===== 大运 TIMELINE ===== */
-.dayun-timeline{display:flex;gap:6px;overflow-x:auto;padding:12px 0;margin-bottom:16px;-webkit-overflow-scrolling:touch}
+.dayun-timeline{display:flex;gap:6px;overflow-x:auto;padding:12px 0 18px;margin-bottom:16px;-webkit-overflow-scrolling:touch}
 .dayun-item{flex:0 0 auto;min-width:95px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--card);text-align:center;font-size:.78rem;transition:all .2s;cursor:default}
 .dayun-item:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
 .dayun-item.current{border-color:var(--vermillion);background:rgba(197,61,67,.04);box-shadow:0 0 0 2px rgba(197,61,67,.12)}
