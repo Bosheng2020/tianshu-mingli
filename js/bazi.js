@@ -526,12 +526,26 @@ const BaZi = (function () {
     try {
       var yun = ec.getYun(gender === 'male' ? 1 : 0);
       var dayunArr = yun.getDaYun();
+      var currentYear = new Date().getFullYear();
       dayunArr.forEach(function(dy) {
         var lnArr = dy.getLiuNian();
+        var lnData = lnArr.map(function(ln) {
+          var lnObj = { year: ln.getYear(), ganZhi: ln.getGanZhi(), age: ln.getAge() };
+          // 当年流年：提取流月数据
+          if (ln.getYear() === currentYear) {
+            try {
+              var lmArr = ln.getLiuYue();
+              lnObj.liuyue = lmArr.map(function(lm) {
+                return { ganZhi: lm.getGanZhi(), monthCN: lm.getMonthInChinese(), index: lm.getIndex() };
+              });
+            } catch(e) {}
+          }
+          return lnObj;
+        });
         dayunList.push({
           startAge: dy.getStartAge(),
           ganZhi: dy.getGanZhi(),
-          liunian: lnArr.map(function(ln) { return { year: ln.getYear(), ganZhi: ln.getGanZhi(), age: ln.getAge() }; })
+          liunian: lnData
         });
       });
     } catch(e) { console.error('DaYun error:', e); }
@@ -866,7 +880,7 @@ const BaZi = (function () {
       {id:'bz-sec-zhi',label:'地支关系'},{id:'bz-sec-career',label:'事业财运'},
       {id:'bz-sec-love',label:'感情婚姻'},{id:'bz-sec-health',label:'健康'},
       {id:'bz-sec-shensha',label:'神煞'},{id:'bz-sec-dayun',label:'大运流年'},
-      {id:'bz-sec-kaiyun',label:'开运方案'}
+      {id:'bz-sec-liuyue',label:'流月运势'},{id:'bz-sec-kaiyun',label:'开运方案'}
     ];
     bzNavItems.forEach(function(item) {
       html.push('<a href="#' + item.id + '" style="display:inline-block;padding:5px 14px;border-radius:20px;font-size:.82rem;background:var(--cream,#faf8f5);border:1px solid var(--border,#e8e4dd);color:var(--ink,#1a1a2e);text-decoration:none;font-family:var(--font-h);transition:all .15s" onmouseover="this.style.background=\'var(--vermillion)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--cream,#faf8f5)\';this.style.color=\'var(--ink)\'">' + item.label + '</a>');
@@ -1439,24 +1453,61 @@ const BaZi = (function () {
 
     // ==================== 12.6 大运流年 ====================
     if (result.dayunList && result.dayunList.length > 0) {
+      var currentAge = new Date().getFullYear() - (result.lunar.year || 1990);
+      var currentYear = new Date().getFullYear();
+      var currentMonth = new Date().getMonth(); // 0-based
+      var ganWxMap = {'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
+
       html.push('<div class="interp-card">');
       html.push('<h3 id="bz-sec-dayun">大运走势</h3>');
-      html.push('<p style="font-size:.84rem;color:var(--ink-light)">大运每十年一变，揭示人生各阶段的运势主题。点击展开查看详细解读和逐年流年。</p>');
+      html.push('<p style="font-size:.84rem;color:var(--ink-light)">大运每十年一变，揭示人生各阶段的运势主题。横向滚动查看全部大运，当前大运已高亮。点击展开详细解读和逐年流年。</p>');
 
-      // Timeline
-      html.push('<div class="dayun-timeline">');
-      result.dayunList.forEach(function(dy) {
+      // ===== Enhanced Visual Timeline =====
+      html.push('<div class="bz-dayun-visual" style="position:relative;margin:16px 0 20px">');
+      // Progress bar background
+      var totalSpan = 0;
+      result.dayunList.forEach(function(dy){ if(dy.ganZhi) totalSpan++; });
+      var curDyIdx = -1;
+      result.dayunList.forEach(function(dy, i){ if(dy.ganZhi && currentAge >= dy.startAge && currentAge < dy.startAge+10) curDyIdx = i; });
+
+      // Horizontal scrollable timeline
+      html.push('<div class="dayun-timeline" id="bz-dayun-scroll">');
+      result.dayunList.forEach(function(dy, dyIdx) {
         if (!dy.ganZhi) return;
-        var isCur = (currentAge >= dy.startAge && currentAge < dy.startAge + 10);
-        html.push('<div class="dayun-item' + (isCur?' current':'') + '">');
+        var isCur = (dyIdx === curDyIdx);
+        var isPast = (currentAge >= dy.startAge + 10);
+        var dyGan = dy.ganZhi.charAt(0);
+        var dyWx = ganWxMap[dyGan] || '';
+        var dySS = Lunar.shiShen(result.dayMaster, Lunar.TIAN_GAN.indexOf(dyGan));
+        var wxColor = dyWx==='木'?'var(--wood)':dyWx==='火'?'var(--fire)':dyWx==='土'?'var(--earth)':dyWx==='金'?'var(--metal)':'var(--water)';
+        var isYS = dyWx === result.yongShen;
+        var isJS = dyWx === result.jiShen;
+
+        html.push('<div class="dayun-item' + (isCur?' current':'') + (isPast?' past':'') + '" style="position:relative' + (isCur?';border-color:var(--vermillion);box-shadow:0 0 0 2px rgba(197,61,67,.2)':'') + '">');
+        // Age range
         html.push('<div class="dayun-age">' + dy.startAge + '~' + (dy.startAge+9) + '岁</div>');
-        html.push('<div class="dayun-gz">' + dy.ganZhi + '</div>');
+        // GanZhi with color
+        html.push('<div class="dayun-gz" style="font-size:1.05rem;font-weight:700;font-family:var(--font-h)">' + dy.ganZhi + '</div>');
+        // 五行 + 十神 tag
+        html.push('<div style="font-size:.7rem;margin-top:2px">');
+        html.push('<span style="color:'+wxColor+'">' + dyWx + '</span>');
+        if (dySS) html.push(' <span style="color:var(--ink-light)">' + dySS + '</span>');
+        html.push('</div>');
+        // 用神/忌神标记
+        if (isYS) html.push('<div style="position:absolute;top:-6px;right:-4px;background:var(--jade);color:#fff;font-size:.6rem;padding:1px 4px;border-radius:3px;font-weight:700">喜</div>');
+        if (isJS) html.push('<div style="position:absolute;top:-6px;right:-4px;background:var(--vermillion);color:#fff;font-size:.6rem;padding:1px 4px;border-radius:3px;font-weight:700">忌</div>');
+        // Current indicator
+        if (isCur) html.push('<div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:.65rem;color:var(--vermillion);font-weight:700;white-space:nowrap">▲ 当前</div>');
         html.push('</div>');
       });
       html.push('</div>');
 
+      // Auto-scroll to current dayun (via marker div + MutationObserver-free approach)
+      html.push('<div class="bz-auto-scroll" data-target="bz-dayun-scroll" style="display:none"></div>');
+
+      html.push('</div>');
+
       // Expandable detail for each 大运
-      var currentAge = new Date().getFullYear() - (result.lunar.year || 1990);
       var dayunInterp = {
         '比肩':'此运比劫当头，独立自主的十年。凡事靠自己，竞争激烈但也锻炼意志。交友广泛但需防破财。',
         '劫财':'此运劫财主事，花钱大方、社交活跃的十年。投资需谨慎，合伙经营须防分歧。',
@@ -1474,10 +1525,8 @@ const BaZi = (function () {
         if (!dy.ganZhi) return;
         var isCur = (currentAge >= dy.startAge && currentAge < dy.startAge + 10);
         var dyGan = dy.ganZhi.charAt(0);
-        var ganWxMap = {'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
         var dyWx = ganWxMap[dyGan] || '';
         var dySS = Lunar.shiShen(result.dayMaster, Lunar.TIAN_GAN.indexOf(dyGan));
-        var currentYear = new Date().getFullYear();
 
         html.push('<details class="yearly-detail' + (isCur?' current-year-detail':'') + '"' + (isCur?' open':'') + '>');
         html.push('<summary class="yearly-summary">');
@@ -1650,6 +1699,183 @@ const BaZi = (function () {
 
       html.push('</div>');
     }
+
+    // ==================== 12.7 流月运势 ====================
+    (function() {
+      // Find current year's liuyue data from dayunList
+      var currentYear = new Date().getFullYear();
+      var currentMonth = new Date().getMonth(); // 0-based (0=Jan)
+      var curLiuYue = null, curLnGZ = '';
+      var ganWxMap = {'甲':'木','乙':'木','丙':'火','丁':'火','戊':'土','己':'土','庚':'金','辛':'金','壬':'水','癸':'水'};
+      if (result.dayunList) {
+        result.dayunList.forEach(function(dy) {
+          if (dy.liunian) {
+            dy.liunian.forEach(function(ln) {
+              if (ln.year === currentYear && ln.liuyue && ln.liuyue.length > 0) {
+                curLiuYue = ln.liuyue;
+                curLnGZ = ln.ganZhi;
+              }
+            });
+          }
+        });
+      }
+
+      if (curLiuYue && curLiuYue.length > 0) {
+        html.push('<div class="interp-card">');
+        html.push('<h3 id="bz-sec-liuyue">' + currentYear + '年流月运势</h3>');
+        html.push('<p style="font-size:.84rem;color:var(--ink-light)">' + currentYear + '年（' + curLnGZ + '年）的十二个月各有不同的干支能量。流月是流年的细化，帮助您把握每月的运势节奏。当前月份已高亮。</p>');
+
+        // 月份名称映射
+        var monthCNNames = {'正':'正月(寅月)','二':'二月(卯月)','三':'三月(辰月)','四':'四月(巳月)',
+          '五':'五月(午月)','六':'六月(未月)','七':'七月(申月)','八':'八月(酉月)',
+          '九':'九月(戌月)','十':'十月(亥月)','冬':'冬月(子月)','腊':'腊月(丑月)'};
+
+        // 流月十神解读
+        var lmSSInterp = {
+          '比肩':{icon:'⚔️',summary:'竞争月',detail:'本月同侪竞争加剧，凡事靠自身实力。宜独立行动，慎合作。社交开支增多。'},
+          '劫财':{icon:'💨',summary:'变动月',detail:'本月容易有意外花费或变动。钱财需看紧，避免借贷担保。情绪波动较大。'},
+          '食神':{icon:'🎨',summary:'才华月',detail:'本月创造力旺盛，灵感频现。适合创作、展示才艺、美食享受。工作得心应手。'},
+          '伤官':{icon:'🔥',summary:'突破月',detail:'本月思维活跃但容易冲动。适合创新但忌冲撞上司。控制言辞，避免口舌是非。'},
+          '偏财':{icon:'💰',summary:'财运月',detail:'本月偏财运好，投资、社交生财有利。异性缘佳，花钱也大方。注意理财规划。'},
+          '正财':{icon:'📈',summary:'收获月',detail:'本月正财运稳，收入稳中有升。踏实工作有回报，适合签约、交易。守正方能聚财。'},
+          '七杀':{icon:'⚡',summary:'压力月',detail:'本月压力较大，可能遇到棘手问题或强势对手。化压力为动力，迎难而上反能突破。注意安全。'},
+          '正官':{icon:'🏆',summary:'贵人月',detail:'本月贵人运佳，工作上容易得到认可和提拔。适合面试、考试、述职。行事端正可获好评。'},
+          '偏印':{icon:'📚',summary:'学习月',detail:'本月适合学习进修，钻研新技能。灵感好但表达欲低。饮食注意，防肠胃不适。'},
+          '正印':{icon:'🌟',summary:'福气月',detail:'本月有长辈或贵人扶持，文书运好。适合签合同、办手续、参加考试。身心安宁。'}
+        };
+
+        // 横向滚动月份卡片
+        html.push('<div class="dayun-timeline" id="bz-liuyue-scroll" style="gap:8px;padding:14px 0;margin:12px 0">');
+        curLiuYue.forEach(function(lm, mi) {
+          var lmGan = lm.ganZhi.charAt(0);
+          var lmZhi = lm.ganZhi.charAt(1);
+          var lmWx = ganWxMap[lmGan] || '';
+          var lmSS = Lunar.shiShen(result.dayMaster, Lunar.TIAN_GAN.indexOf(lmGan));
+          var interp = lmSSInterp[lmSS] || {icon:'📅',summary:'平稳月',detail:'本月运势平稳，宜按部就班，稳中求进。'};
+          // Approximate: lunar month index 0=正月≈Feb, so map to gregorian roughly
+          var isCurMonth = (mi === currentMonth - 1) || (mi === 0 && currentMonth <= 1) || (mi === 11 && currentMonth === 0);
+          // Better: use month index directly, lunar month ~= gregorian month+1 offset
+          // 正月≈2月, 二月≈3月, ..., 腊月≈1月
+          var approxGreg = (mi + 2) > 12 ? (mi + 2 - 12) : (mi + 2); // 1-based gregorian month
+          isCurMonth = (approxGreg === currentMonth + 1);
+
+          var isYS = lmWx === result.yongShen;
+          var isJS = lmWx === result.jiShen;
+          var wxColor = lmWx==='木'?'var(--wood)':lmWx==='火'?'var(--fire)':lmWx==='土'?'var(--earth)':lmWx==='金'?'var(--metal)':'var(--water)';
+          var monthLabel = monthCNNames[lm.monthCN] || (lm.monthCN + '月');
+
+          html.push('<div class="dayun-item' + (isCurMonth?' current':'') + '" style="min-width:88px;position:relative' + (isCurMonth?';border-color:var(--vermillion);box-shadow:0 0 0 2px rgba(197,61,67,.2)':'') + '">');
+          html.push('<div style="font-size:1.2rem">' + interp.icon + '</div>');
+          html.push('<div class="dayun-age" style="font-size:.72rem">' + monthLabel + '</div>');
+          html.push('<div class="dayun-gz" style="font-size:.95rem;font-weight:700;font-family:var(--font-h)">' + lm.ganZhi + '</div>');
+          html.push('<div style="font-size:.68rem;margin-top:2px"><span style="color:'+wxColor+'">' + lmWx + '</span> <span style="color:var(--ink-light)">' + (lmSS||'') + '</span></div>');
+          html.push('<div style="font-size:.72rem;font-weight:600;color:' + (isYS?'var(--jade)':isJS?'var(--vermillion)':'var(--gold)') + ';margin-top:1px">' + interp.summary + '</div>');
+          if (isYS) html.push('<div style="position:absolute;top:-5px;right:-3px;background:var(--jade);color:#fff;font-size:.55rem;padding:1px 3px;border-radius:2px;font-weight:700">喜</div>');
+          if (isJS) html.push('<div style="position:absolute;top:-5px;right:-3px;background:var(--vermillion);color:#fff;font-size:.55rem;padding:1px 3px;border-radius:2px;font-weight:700">忌</div>');
+          if (isCurMonth) html.push('<div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--vermillion);font-weight:700;white-space:nowrap">▲ 本月</div>');
+          html.push('</div>');
+        });
+        html.push('</div>');
+
+        // Auto-scroll to current month (marker for post-render scroll)
+        html.push('<div class="bz-auto-scroll" data-target="bz-liuyue-scroll" style="display:none"></div>');
+
+        // 当月详细解读
+        var curMonthData = null;
+        curLiuYue.forEach(function(lm, mi) {
+          var approxGreg = (mi + 2) > 12 ? (mi + 2 - 12) : (mi + 2);
+          if (approxGreg === currentMonth + 1) curMonthData = lm;
+        });
+
+        if (curMonthData) {
+          var cmGan = curMonthData.ganZhi.charAt(0);
+          var cmZhi = curMonthData.ganZhi.charAt(1);
+          var cmWx = ganWxMap[cmGan] || '';
+          var cmZhiIdx = Lunar.DI_ZHI.indexOf(cmZhi);
+          var cmZhiWx = Lunar.zhiWuXing(cmZhiIdx);
+          var cmSS = Lunar.shiShen(result.dayMaster, Lunar.TIAN_GAN.indexOf(cmGan));
+          var cmInterp = lmSSInterp[cmSS] || {icon:'📅',summary:'平稳月',detail:'本月运势平稳。'};
+          var cmIsYS = (cmWx === result.yongShen || cmZhiWx === result.yongShen);
+          var cmIsJS = (cmWx === result.jiShen || cmZhiWx === result.jiShen);
+
+          html.push('<div style="margin-top:16px;padding:14px 18px;border:2px solid '+(cmIsYS?'var(--jade)':cmIsJS?'var(--vermillion)':'var(--gold)')+';border-radius:var(--r-lg);background:'+(cmIsYS?'rgba(45,143,111,.04)':cmIsJS?'rgba(197,61,67,.04)':'rgba(197,146,46,.04)')+'">');
+          html.push('<h4 style="margin-bottom:8px">' + cmInterp.icon + ' 本月运势：' + (monthCNNames[curMonthData.monthCN]||curMonthData.monthCN+'月') + '（' + curMonthData.ganZhi + '）</h4>');
+          html.push('<p><strong>流月十神：' + (cmSS||'') + '</strong>　天干' + cmGan + '属' + cmWx + '，地支' + cmZhi + '属' + cmZhiWx + '</p>');
+          html.push('<p>' + cmInterp.detail + '</p>');
+
+          // 与用神忌神关系
+          var cmRels = [];
+          if (cmWx === result.yongShen) cmRels.push('流月天干五行（' + cmWx + '）合用神，本月天干助力明显');
+          if (cmWx === result.jiShen) cmRels.push('流月天干五行（' + cmWx + '）犯忌神，本月天干有阻力');
+          if (cmZhiWx === result.yongShen) cmRels.push('流月地支五行（' + cmZhiWx + '）合用神，本月地支暗中助力');
+          if (cmZhiWx === result.jiShen) cmRels.push('流月地支五行（' + cmZhiWx + '）犯忌神，本月地支有压力');
+          if (cmRels.length > 0) {
+            html.push('<p style="padding:8px 12px;background:rgba(0,0,0,.03);border-radius:4px;font-size:.85rem;margin-top:6px"><strong>用神分析：</strong>' + cmRels.join('；') + '。</p>');
+          }
+
+          // 综合评分
+          var cmScore = 0;
+          if (cmWx === result.yongShen) cmScore += 2;
+          if (cmZhiWx === result.yongShen) cmScore += 2;
+          if (cmWx === result.jiShen) cmScore -= 2;
+          if (cmZhiWx === result.jiShen) cmScore -= 2;
+          var cmVerdict = cmScore >= 3 ? '本月运势上佳，适合主动出击、把握机会！' :
+            cmScore >= 1 ? '本月运势不错，顺势而为可获佳绩。' :
+            cmScore >= -1 ? '本月运势平稳，稳中求进为上策。' :
+            cmScore >= -3 ? '本月运势偏弱，宜谨慎行事、避免冒险。' :
+            '本月运势欠佳，宜低调行事、韬光养晦。';
+          var cmColor = cmScore >= 1 ? 'var(--jade)' : cmScore <= -1 ? 'var(--vermillion)' : 'var(--gold)';
+          html.push('<p style="font-weight:700;color:'+cmColor+';margin-top:8px;font-size:.95rem">' + cmVerdict + '</p>');
+
+          // 行动建议
+          html.push('<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:.85rem">');
+          if (cmScore >= 1) {
+            html.push('<div><span style="color:var(--jade);font-weight:700">宜：</span>求财、签约、面试、社交、出行</div>');
+            html.push('<div><span style="color:var(--vermillion);font-weight:700">忌：</span>骄躁、冒进、过度投资</div>');
+          } else if (cmScore <= -1) {
+            html.push('<div><span style="color:var(--jade);font-weight:700">宜：</span>守成、学习、修身、储蓄</div>');
+            html.push('<div><span style="color:var(--vermillion);font-weight:700">忌：</span>冒险、跳槽、大额投资、争执</div>');
+          } else {
+            html.push('<div><span style="color:var(--jade);font-weight:700">宜：</span>稳步推进、维护人脉</div>');
+            html.push('<div><span style="color:var(--vermillion);font-weight:700">忌：</span>大起大落、孤注一掷</div>');
+          }
+          html.push('</div>');
+
+          html.push('</div>');
+        }
+
+        // 全年流月一览表
+        html.push('<details style="margin-top:14px"><summary style="cursor:pointer;font-size:.88rem;font-weight:600;color:var(--gold);padding:6px 0">展开查看全年十二月详解</summary>');
+        html.push('<div style="margin-top:8px">');
+        curLiuYue.forEach(function(lm, mi) {
+          var lmGan = lm.ganZhi.charAt(0);
+          var lmZhi = lm.ganZhi.charAt(1);
+          var lmWx = ganWxMap[lmGan] || '';
+          var lmZhiIdx = Lunar.DI_ZHI.indexOf(lmZhi);
+          var lmZhiWx = Lunar.zhiWuXing(lmZhiIdx);
+          var lmSS = Lunar.shiShen(result.dayMaster, Lunar.TIAN_GAN.indexOf(lmGan));
+          var interp = lmSSInterp[lmSS] || {icon:'📅',summary:'平稳月',detail:'本月运势平稳。'};
+          var isYS = (lmWx === result.yongShen || lmZhiWx === result.yongShen);
+          var isJS = (lmWx === result.jiShen || lmZhiWx === result.jiShen);
+          var approxGreg = (mi + 2) > 12 ? (mi + 2 - 12) : (mi + 2);
+          var isCurMonth = (approxGreg === currentMonth + 1);
+          var monthLabel = monthCNNames[lm.monthCN] || (lm.monthCN + '月');
+          var borderC = isCurMonth ? 'var(--vermillion)' : isYS ? 'var(--jade)' : isJS ? 'var(--vermillion)' : 'var(--border)';
+
+          html.push('<div style="border-left:3px solid '+borderC+';padding:8px 14px;margin:6px 0;border-radius:0 6px 6px 0;background:rgba(0,0,0,.01)">');
+          html.push('<p style="margin-bottom:4px"><strong>' + interp.icon + ' ' + monthLabel + '</strong> ' + lm.ganZhi + ' <span style="font-size:.8rem;color:var(--ink-light)">' + (lmSS||'') + '</span>');
+          if (isCurMonth) html.push(' <span style="background:var(--vermillion);color:#fff;font-size:.7rem;padding:1px 6px;border-radius:3px;font-weight:700">本月</span>');
+          if (isYS) html.push(' <span style="color:var(--jade);font-size:.78rem;font-weight:600">喜用</span>');
+          if (isJS) html.push(' <span style="color:var(--vermillion);font-size:.78rem;font-weight:600">忌神</span>');
+          html.push('</p>');
+          html.push('<p style="font-size:.84rem">' + interp.detail + '</p>');
+          html.push('</div>');
+        });
+        html.push('</div></details>');
+
+        html.push('</div>');
+      }
+    })();
 
     // ==================== 13. 神煞与特殊格局 ====================
     html.push('<div class="interp-card">');

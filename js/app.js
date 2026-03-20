@@ -616,6 +616,17 @@
                     };
                     document.getElementById('bazi-result').innerHTML = BaZi.render(baziData);
 
+                    // Auto-scroll dayun/liuyue timelines to current position
+                    setTimeout(function() {
+                        ['bz-dayun-scroll','bz-liuyue-scroll'].forEach(function(id) {
+                            var s = document.getElementById(id);
+                            if (s) {
+                                var c = s.querySelector('.dayun-item.current');
+                                if (c) s.scrollLeft = c.offsetLeft - s.offsetWidth/2 + c.offsetWidth/2;
+                            }
+                        });
+                    }, 100);
+
                     // Feng Shui
                     try {
                         var fsResult = FengShui.analyze(baziData);

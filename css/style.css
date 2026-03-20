@@ -195,6 +195,8 @@ select:focus,input:focus{outline:none;border-color:var(--vermillion);box-shadow:
 .dayun-item{flex:0 0 auto;min-width:95px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--card);text-align:center;font-size:.78rem;transition:all .2s;cursor:default}
 .dayun-item:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
 .dayun-item.current{border-color:var(--vermillion);background:rgba(197,61,67,.04);box-shadow:0 0 0 2px rgba(197,61,67,.12)}
+.dayun-item.past{opacity:.55}
+.dayun-item.past:hover{opacity:.85}
 .dayun-age{font-family:var(--font-h);font-weight:700;color:var(--vermillion);font-size:.82rem;margin-bottom:2px}
 .dayun-gz{font-family:var(--font-h);font-weight:600;font-size:.85rem;color:var(--ink)}
 .dayun-palace{font-size:.75rem;color:var(--ink-light);margin-top:2px}
