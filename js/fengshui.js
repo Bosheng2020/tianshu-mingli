@@ -144,7 +144,13 @@ const FengShui = (() => {
     var ys2 = shengMap[ys]; if (ys2 === js) ys2 = ys;
 
     // 命卦
-    var birthYear = (baziResult.lunar && baziResult.lunar.year) || 1990;
+    // Handle both lunar-javascript Lunar object and our {year:...} format
+    var lunarObj = baziResult.lunar;
+    var birthYear = 1990;
+    if (lunarObj) {
+      if (typeof lunarObj.getYear === 'function') birthYear = lunarObj.getYear(); // lunar-javascript object
+      else if (lunarObj.year) birthYear = lunarObj.year; // our format
+    }
     var gender = baziResult.gender || 'male';
     var guaNum = calcMingGua(birthYear, gender);
     var guaName = GUA_NAMES[guaNum] || '坤';
@@ -155,7 +161,17 @@ const FengShui = (() => {
     var currentYear = new Date().getFullYear();
     var flyGrid = getYearFlyStars(currentYear);
 
-    return { ys:ys, ys2:ys2, js:js, guaNum:guaNum, guaName:guaName, guaGroup:guaGroup, guaDirs:guaDirs, flyGrid:flyGrid, currentYear:currentYear, birthYear:birthYear, gender:gender };
+    // Extract birth info for display
+    var birthInfo = '';
+    if (baziResult.ec) {
+      try { birthInfo = baziResult.ec.getYear()+' '+baziResult.ec.getMonth()+' '+baziResult.ec.getDay()+' '+baziResult.ec.getTime(); } catch(e){}
+    } else if (baziResult.pillars) {
+      birthInfo = baziResult.pillars.map(function(p){return p.text}).join(' ');
+    }
+    var dayMasterWx = baziResult.dayMasterWuxing || '';
+    var strengthDesc = baziResult.strengthDesc || '';
+
+    return { ys:ys, ys2:ys2, js:js, guaNum:guaNum, guaName:guaName, guaGroup:guaGroup, guaDirs:guaDirs, flyGrid:flyGrid, currentYear:currentYear, birthYear:birthYear, gender:gender, birthInfo:birthInfo, dayMasterWx:dayMasterWx, strengthDesc:strengthDesc };
   }
 
   // ===== render =====
@@ -167,6 +183,10 @@ const FengShui = (() => {
     // 导航
     html += '<div class="interp-card" style="padding:12px 16px;text-align:center">';
     html += '<h2>风水堪舆</h2>';
+    if (result.birthInfo) {
+      html += '<p style="font-family:var(--font-h);font-size:1rem;margin:6px 0">' + result.birthInfo + '</p>';
+    }
+    html += '<p style="font-size:.85rem;color:var(--ink-light)">' + result.birthYear + '年 ' + (result.gender==='male'?'男':'女') + '命 | 用神：' + ys + ' | 忌神：' + js + (result.dayMasterWx ? ' | 日主：' + result.dayMasterWx : '') + (result.strengthDesc ? '（' + result.strengthDesc + '）' : '') + '</p>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px">';
     [{id:'fs-bazhai',l:'八宅命卦'},{id:'fs-fly',l:'流年飞星'},{id:'fs-house',l:'居家布局'},{id:'fs-bed',l:'卧室床位'},{id:'fs-wealth',l:'催财布局'},{id:'fs-taboo',l:'风水禁忌'}].forEach(function(n) {
       html += '<a href="#'+n.id+'" style="display:inline-block;padding:5px 14px;border-radius:20px;font-size:.82rem;background:var(--cream);border:1px solid var(--border);color:var(--ink);text-decoration:none;font-family:var(--font-h);transition:all .15s" onmouseover="this.style.background=\'var(--vermillion)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--cream)\';this.style.color=\'var(--ink)\'">' + n.l + '</a>';
