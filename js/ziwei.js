@@ -1760,6 +1760,45 @@ const ZiWei = (function () {
       html += '<p><strong style="color:' + color + '">' + m.star + ' ' + fullLabel + '</strong> 在' + gong(m.palace) + (pd ? ' — ' + pd : '') + '</p>';
     });
 
+    // 检测生年四化同宫组合
+    var palaceHuaMap = {};
+    mutagenStars.forEach(function(m) {
+      if (!palaceHuaMap[m.palace]) palaceHuaMap[m.palace] = [];
+      var shortH = m.hua.length === 1 ? '化' + m.hua : m.hua;
+      palaceHuaMap[m.palace].push({hua: shortH, star: m.star});
+    });
+
+    var natalComboInterp = {
+      '化禄+化权': {title:'禄权同宫 — 大吉格局', text:'化禄与化权同入此宫，福气加权力。此宫代表的领域既有丰厚资源又有强大掌控力，是命盘中最有利的组合之一。事半功倍，得财得权。'},
+      '化禄+化科': {title:'禄科同宫 — 名利双收', text:'化禄与化科同入此宫，有利又有名。此宫领域既能获取实际利益，又能赢得好名声。贵人运和财运相互加持。'},
+      '化禄+化忌': {title:'禄忌同宫 — 又爱又恨', text:'化禄与化忌同入此宫，福祸相依。此宫领域有收获但伴随烦恼，得到的东西总让人不够安心。赚了钱也忧心，有了感情也患得患失。需学会享受已拥有的。'},
+      '化权+化科': {title:'权科同宫 — 实力配名望', text:'化权与化科同入此宫，有权有名。此宫领域既有实际掌控力又有社会认可，是权威与声望的完美结合。'},
+      '化权+化忌': {title:'权忌同宫 — 压力中的动力', text:'化权与化忌同入此宫，有能力但也焦虑。对此宫领域过度执着和掌控，压力极大。但压力也能转化为强大动力，「化忌为权」者能在逆境中崛起。'},
+      '化科+化忌': {title:'科忌同宫 — 困境中的贵人', text:'化科与化忌同入此宫，有困扰也有解药。此宫领域虽有烦恼但总能遇到化解之人。化科如同一盏灯，照亮化忌的黑暗。逢凶化吉之象。'}
+    };
+
+    var hasNatalCombo = false;
+    for (var palName in palaceHuaMap) {
+      var huaList = palaceHuaMap[palName];
+      if (huaList.length >= 2) {
+        for (var a = 0; a < huaList.length; a++) {
+          for (var b = a + 1; b < huaList.length; b++) {
+            var key1 = huaList[a].hua + '+' + huaList[b].hua;
+            var key2 = huaList[b].hua + '+' + huaList[a].hua;
+            var combo = natalComboInterp[key1] || natalComboInterp[key2];
+            if (combo) {
+              if (!hasNatalCombo) { html += '<h4>生年四化同宫组合</h4>'; hasNatalCombo = true; }
+              html += '<div style="border:2px dashed var(--gold);background:rgba(197,146,46,.04);padding:12px 16px;margin:8px 0;border-radius:6px">';
+              html += '<p style="font-weight:700;color:var(--gold)">' + gong(palName) + '：' + combo.title + '</p>';
+              html += '<p style="font-size:.88rem">' + huaList[a].star + huaList[a].hua + ' + ' + huaList[b].star + huaList[b].hua + ' 同入' + gong(palName) + '</p>';
+              html += '<p>' + combo.text + '</p>';
+              html += '</div>';
+            }
+          }
+        }
+      }
+    }
+
     html += '</div>';
 
     // ===== 自化解读 =====
@@ -1872,6 +1911,44 @@ const ZiWei = (function () {
         if (palaceInterp) html += '<p>' + palaceInterp + '</p>';
         else if (interp.general) html += '<p>' + interp.general + '</p>';
         html += '</div>';
+      });
+
+      // 检测：自化 + 生年四化 同宫组合（飞星派精髓）
+      var crossComboInterp = {
+        '生年禄+自化禄': {title:'双禄外泄', color:'#d97706', text:'此宫同时有生年化禄和自化禄，福气双重但都留不住。如同两个水龙头同时开，看似富足实则不断流失。命主在此宫领域容易「有福不知福」，到手的好处不珍惜就溜走了。需特别注意把握和珍惜已有的资源。'},
+        '生年禄+自化忌': {title:'禄转忌 — 大凶', color:'#dc2626', text:'此宫有生年化禄却被自化忌消耗，是飞星派中最不利的组合之一。本来到手的福气被自我纠结所吞噬——赚了钱却焦虑、有了感情却患得患失、事业顺利却不知足。命主需要深刻修行「知足常乐」的智慧。'},
+        '生年禄+自化权': {title:'禄转权', color:'#16a34a', text:'此宫有生年化禄又自化权，福气转化为掌控力。命主在此宫领域不仅有资源，还能牢牢把握。是比较好的组合，福气不会白白流失而是转化为实际的权力和能力。'},
+        '生年禄+自化科': {title:'禄转科', color:'#2563eb', text:'此宫有生年化禄又自化科，福气转化为名声。命主在此宫领域有实惠也有面子，但科的力量偏虚，名声可能大于实际。'},
+        '生年权+自化禄': {title:'权转禄', color:'#d97706', text:'此宫有生年化权又自化禄，掌控力转化为福气向外流动。权力和能力会自动转为惠及他人的好处。命主在此宫领域乐于分享权力和资源。'},
+        '生年权+自化忌': {title:'权转忌', color:'#dc2626', text:'此宫有生年化权又自化忌，权力变成执念。对此宫领域的掌控欲过强反而变成困扰，越想控制越焦虑。需学会适度放手。'},
+        '生年权+自化科': {title:'权转科', color:'#2563eb', text:'此宫有生年化权又自化科，实权转为名声。有实力但更注重名望的维护。'},
+        '生年权+自化权': {title:'双权叠加', color:'#d97706', text:'此宫有生年化权又自化权，掌控力极强但也过于强势。在此宫领域控制欲爆棚，可能压得身边人喘不过气。需注意给他人空间。'},
+        '生年科+自化忌': {title:'科转忌', color:'#dc2626', text:'此宫有生年化科又自化忌，名声因为执念而受损。在此宫领域本有好名声，但自己的纠结和焦虑反而坏了名声。'},
+        '生年科+自化禄': {title:'科转禄', color:'#16a34a', text:'此宫有生年化科又自化禄，名声转为实际福气。贵人运好且能变现，是不错的组合。'},
+        '生年忌+自化禄': {title:'忌转禄 — 化解', color:'#16a34a', text:'此宫有生年化忌但自化禄，困扰能够自动转化为福气。这是难得的「化忌为禄」格局——虽有烦恼但总能从中找到好处，因祸得福。命主在此宫领域有逆境翻盘的能力。'},
+        '生年忌+自化权': {title:'忌转权 — 逆境成长', color:'#d97706', text:'此宫有生年化忌但自化权，困扰转化为行动力。越是被困扰的领域越能激发斗志和能力。逆境出英雄的格局。'},
+        '生年忌+自化科': {title:'忌转科 — 困中有贵', color:'#2563eb', text:'此宫有生年化忌但自化科，困扰中有贵人化解。此宫领域虽有烦恼但总能遇到帮助解决问题的人。化忌的黑暗被化科的光明照亮。'},
+        '生年忌+自化忌': {title:'双忌叠加 — 大凶', color:'#dc2626', text:'此宫有生年化忌又自化忌，双重困扰叠加。此宫代表的领域是命主此生最大的课题和痛点——不仅外部有阻碍，自己内心也在不断制造烦恼。需要极大的智慧和修行才能化解。建议在此领域降低期望、放下执念。'}
+      };
+
+      var hasCrossCombo = false;
+      selfHuaData.forEach(function(sh) {
+        // Check if this palace also has natal mutagen
+        var natalInSamePalace = mutagenStars.filter(function(m) { return m.palace === sh.palace; });
+        natalInSamePalace.forEach(function(natal) {
+          var natalLabel = natal.hua.length === 1 ? '化' + natal.hua : natal.hua;
+          var selfLabel = '自化' + sh.hua;
+          var key = '生年' + natalLabel.charAt(1) + '+' + selfLabel;
+          var combo = crossComboInterp[key];
+          if (combo) {
+            if (!hasCrossCombo) { html += '<h4>生年四化 × 自化 交叉组合</h4>'; html += '<p style="font-size:.84rem;color:var(--ink-light)">当同一宫位同时存在生年四化和自化时，两种能量交织产生特殊效应。这是飞星派最精髓的分析。</p>'; hasCrossCombo = true; }
+            html += '<div style="border:2px solid ' + combo.color + ';background:rgba(0,0,0,.02);padding:12px 16px;margin:8px 0;border-radius:6px">';
+            html += '<p style="font-weight:700;color:' + combo.color + '">' + gong(sh.palace) + '：' + combo.title + '</p>';
+            html += '<p style="font-size:.88rem;color:var(--ink-light)">' + natal.star + natalLabel + '（生年）+ ' + sh.star + '自化' + sh.hua + '</p>';
+            html += '<p>' + combo.text + '</p>';
+            html += '</div>';
+          }
+        });
       });
 
       html += '</div>';
