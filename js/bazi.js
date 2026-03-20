@@ -566,114 +566,46 @@ const BaZi = (function () {
     for (var wx in elements) { if (wx !== dayMasterWx && wx !== motherWx) otherScore += elements[wx]; }
     var isStrong = strengthScore >= otherScore;
 
-    // 用神忌神 — more nuanced logic
-    var yongShen, jiShen, yongShenReason, jiShenReason;
-    var woShengWx = WX_SHENG[dayMasterWx]; // 食伤
-    var woKeWx = WX_KE[dayMasterWx]; // 财星
-    var keWoWx = ''; // 官杀
+    // ===== 喜用神/忌仇神（标准扶抑法） =====
+    var woShengWx = WX_SHENG[dayMasterWx];
+    var woKeWx = WX_KE[dayMasterWx];
+    var keWoWx = "";
     for (var kk in WX_KE) { if (WX_KE[kk] === dayMasterWx) { keWoWx = kk; break; } }
 
+    var yongShen, xiShen, jiShen, chouShen, xianShen;
+    var yongShenReason, jiShenReason;
+
     if (isStrong) {
-      // 身强：需泄耗克。优先食伤泄秀，其次财星耗身，再次官杀克身
-      if (elements[woShengWx] < elements[woKeWx]) {
-        yongShen = woShengWx; // 食伤泄秀
-        yongShenReason = '日主身强，取' + yongShen + '（食伤）为用神泄秀。食伤为日主所生之五行，能引导旺盛的日主能量转化为才华与财富。身强喜食伤泄秀，主人聪明有才华，能将过旺的精力化为创造力。';
-      } else {
-        yongShen = woKeWx; // 财星耗身
-        yongShenReason = '日主身强，取' + yongShen + '（财星）为用神耗身。财星消耗日主过旺的力量，同时带来财运。身强用财者，主勤劳致富，能将旺盛精力转化为实际收入。';
-      }
-      jiShen = motherWx; // 印星为忌
-      jiShenReason = '忌' + jiShen + '（印星）。身已强旺，印星再来生扶则过犹不及，反使日主气势过盛、刚愎自用。大运流年遇' + jiShen + '时需注意收敛。';
+      yongShen = keWoWx;       // 官杀克我
+      xiShen = woKeWx;         // 财星耗我
+      jiShen = dayMasterWx;    // 比劫帮身
+      chouShen = motherWx;     // 印星生身
+      xianShen = woShengWx;    // 食伤
+      yongShenReason = "日主" + dayMasterChar + "（" + dayMasterWx + "）身强，需要克制和消耗。用神" + yongShen + "（官杀克身），喜神" + xiShen + "（财星耗身）。遇" + yongShen + "、" + xiShen + "运势提升。";
+      jiShenReason = "忌" + jiShen + "（比劫帮身）和" + chouShen + "（印星生身）。身强再遇生扶则过旺为灾。";
     } else {
-      // 身弱：需生扶。优先印星生身，其次比劫帮身
-      yongShen = motherWx; // 印星生身
-      yongShenReason = '日主身弱，取' + yongShen + '（印星）为用神生身。印星为生日主之五行，如母亲般滋养日主，增强自身力量。身弱喜印者，主学业有成、贵人运旺、长辈扶持。大运流年遇' + yongShen + '则运势提升。';
-      jiShen = keWoWx || woKeWx; // 官杀或财星为忌
-      if (keWoWx && elements[keWoWx] > elements[woKeWx]) {
-        jiShen = keWoWx;
-        jiShenReason = '忌' + jiShen + '（官杀）。身弱遇官杀克身，压力倍增、灾祸易生。大运流年遇' + jiShen + '需防小人、官非、健康问题。宜借印星化杀生身。';
-      } else {
-        jiShen = woKeWx;
-        jiShenReason = '忌' + jiShen + '（财星）。身弱遇财星则力不从心，求财辛苦、入不敷出。大运流年遇' + jiShen + '需量力而行，避免盲目投资。';
-      }
+      yongShen = motherWx;     // 印星生我
+      xiShen = dayMasterWx;    // 比劫帮我
+      jiShen = keWoWx;         // 官杀克我
+      chouShen = woKeWx;       // 财星耗我
+      xianShen = woShengWx;    // 食伤
+      yongShenReason = "日主" + dayMasterChar + "（" + dayMasterWx + "）身弱，需要生扶帮助。用神" + yongShen + "（印星生身），喜神" + xiShen + "（比劫帮身）。遇" + yongShen + "、" + xiShen + "运势提升。";
+      jiShenReason = "忌" + jiShen + "（官杀克身）和" + chouShen + "（财星耗身）。身弱再遇克泄则力不从心。";
     }
 
-    // ====== 调候用神 (tiaohou) ======
-    var tiaohou = null, tiaohouReason = '', needTiaohou = false;
-    (function() {
-      var mz = pillars[1].zhi;
-      var winterZhi = { '子': true, '丑': true, '亥': true };
-      var summerZhi = { '午': true, '未': true, '巳': true };
-      if (winterZhi[mz]) {
-        tiaohou = '丙';
-        needTiaohou = true;
-        tiaohouReason = '生于' + mz + '月（冬季寒冷），命局需丙火暖局调候。冬月水旺土寒金冷，非丙火不能解冻回春。';
-      } else if (summerZhi[mz]) {
-        tiaohou = '壬';
-        needTiaohou = true;
-        tiaohouReason = '生于' + mz + '月（夏季炎热），命局需壬水润局调候。夏月火炎土燥，非壬水不能滋润降温。';
-      } else {
-        tiaohouReason = '生于' + mz + '月，气候温和，不需特别调候。';
-      }
-    })();
+    // 调候提示（补充说明，不覆盖用神）
+    var tiaohouNote = "";
+    var mzSeason2 = {"子":"冬","丑":"冬","亥":"冬","午":"夏","未":"夏","巳":"夏"};
+    var mzS = mzSeason2[pillars[1].zhi];
+    if (mzS === "冬") tiaohouNote = "调候提示：生于冬月，命局偏寒。宜多接触火属性事物暖局（南方、红色、灯光）。";
+    else if (mzS === "夏") tiaohouNote = "调候提示：生于夏月，命局偏燥。宜多接触水属性事物润局（北方、蓝黑色、近水）。";
 
-    // ====== 通关用神 (tongguan) ======
-    var tongguan = null, tongguanReason = '';
-    (function() {
-      var pct = elementPct;
-      // 五行相克循环中，两强相战需中间五行通关
-      var pairs = [
-        { a: '金', b: '木', bridge: '水', desc: '金木交战，水可通关：金生水、水生木，化干戈为玉帛。' },
-        { a: '木', b: '土', bridge: '火', desc: '木土交战，火可通关：木生火、火生土，使两强和解。' },
-        { a: '土', b: '水', bridge: '金', desc: '土水交战，金可通关：土生金、金生水，调和两方势力。' },
-        { a: '水', b: '火', bridge: '木', desc: '水火交战，木可通关：水生木、木生火，引导对立为合作。' },
-        { a: '火', b: '金', bridge: '土', desc: '火金交战，土可通关：火生土、土生金，缓解激烈冲突。' }
-      ];
-      for (var i = 0; i < pairs.length; i++) {
-        var p = pairs[i];
-        if (pct[p.a] >= 25 && pct[p.b] >= 25 && pct[p.bridge] < 10) {
-          tongguan = p.bridge;
-          tongguanReason = p.desc;
-          break;
-        }
-      }
-    })();
-
-    // ====== 综合用神 (finalYongShen) ======
-    var finalYongShen, finalYongShenMethod, finalYongShenReason;
-    (function() {
-      var tiaohouWx = tiaohou === '丙' ? '火' : tiaohou === '壬' ? '水' : null;
-      if (tiaohouWx && elementPct[tiaohouWx] < 25) {
-        finalYongShen = tiaohouWx;
-        finalYongShenMethod = '调候';
-        finalYongShenReason = '以调候为先：' + tiaohouReason + '且命局中' + tiaohouWx + '不旺（' + elementPct[tiaohouWx] + '%），确需补充。';
-      } else if (tongguan) {
-        finalYongShen = tongguan;
-        finalYongShenMethod = '通关';
-        finalYongShenReason = '以通关为要：' + tongguanReason;
-      } else {
-        finalYongShen = yongShen;
-        finalYongShenMethod = '扶抑';
-        finalYongShenReason = '以扶抑取用：' + yongShenReason;
-      }
-      // 统一：用综合用神覆盖扶抑用神，保证全局一致
-      yongShen = finalYongShen;
-      yongShenReason = finalYongShenReason;
-
-      // 忌神：取克用神最强的五行，确保不与用神相同
-      var keYS = {'木':'金','火':'水','土':'木','金':'火','水':'土'};
-      var shengYS = {'木':'水','火':'木','土':'火','金':'土','水':'金'};
-      // 忌神优先取：克用神的五行（破坏用神）
-      var bestJi = keYS[finalYongShen];
-      // 如果克用神的五行就是日主本身五行且身弱，换成泄用神的五行
-      if (bestJi === dayMasterWx && !isStrong) {
-        bestJi = WX_KE[finalYongShen] || keYS[finalYongShen];
-      }
-      if (bestJi && bestJi !== finalYongShen) {
-        jiShen = bestJi;
-        jiShenReason = '忌' + jiShen + '。' + jiShen + '克制用神' + finalYongShen + '，是命局中最不利的五行。大运流年遇' + jiShen + '时运势受阻。';
-      }
-    })();
+    var finalYongShen = yongShen;
+    var finalYongShenMethod = "扶抑";
+    var needTiaohou = !!mzS;
+    var tiaohou = mzS === "冬" ? "丙" : mzS === "夏" ? "壬" : null;
+    var tiaohouReason = tiaohouNote;
+    var tongguan = null, tongguanReason = "";
 
     // ====== 地支关系 (zhiRelations) ======
     var zhiRelations = [];
@@ -815,10 +747,11 @@ const BaZi = (function () {
       strengthScore: strengthScore, otherScore: otherScore,
       season: season, seasonLabel: seasonLabel, seasonFactor: seasonFactor, seasonWeights: seasonWeights,
       supportCount: supportCount, drainCount: drainCount, motherWx: motherWx,
-      yongShen: yongShen, jiShen: jiShen, yongShenReason: yongShenReason, jiShenReason: jiShenReason,
+      yongShen: yongShen, xiShen: xiShen, jiShen: jiShen, chouShen: chouShen, xianShen: xianShen,
+      yongShenReason: yongShenReason, jiShenReason: jiShenReason, tiaohouNote: tiaohouNote,
       tiaohou: tiaohou, tiaohouReason: tiaohouReason, needTiaohou: needTiaohou,
       tongguan: tongguan, tongguanReason: tongguanReason,
-      finalYongShen: finalYongShen, finalYongShenMethod: finalYongShenMethod, finalYongShenReason: finalYongShenReason,
+      finalYongShen: finalYongShen, finalYongShenMethod: finalYongShenMethod,
       zhiRelations: zhiRelations,
       xunKong: xunKong, xunKongDesc: xunKongDesc,
       shiShenCount: shiShenCount, dominantSS: dominantSS,
@@ -1162,58 +1095,34 @@ const BaZi = (function () {
     html.push('<tr><td style="font-size:1.05rem;font-weight:700">最终判断</td><td style="font-size:1.05rem"><strong style="color:var(--vermillion)">' + result.strengthDesc + '</strong></td></tr>');
     html.push('</tbody></table>');
 
-    // 多维用神分析
-    html.push('<h4>多维用神分析</h4>');
-    html.push('<p style="font-size:.84rem;color:var(--ink-light)">传统命理取用神有调候、通关、扶抑三种方法，优先级为：调候 > 通关 > 扶抑。</p>');
+    // 喜用神展示
+    html.push('<h4>喜用五行</h4>');
+    html.push('<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0">');
+    html.push('<div style="padding:16px;background:rgba(45,143,111,.06);border:2px solid var(--jade);border-radius:8px;text-align:center">');
+    html.push('<div style="font-size:.75rem;color:var(--jade);font-weight:700">用神（最需要）</div>');
+    html.push('<div style="font-size:1.5rem;font-weight:900;margin:6px 0">' + elSpan(result.yongShen, result.yongShen) + '</div>');
+    html.push('</div>');
+    html.push('<div style="padding:16px;background:rgba(45,143,111,.04);border:1px solid var(--jade);border-radius:8px;text-align:center">');
+    html.push('<div style="font-size:.75rem;color:var(--jade);font-weight:700">喜神（辅助用神）</div>');
+    html.push('<div style="font-size:1.5rem;font-weight:900;margin:6px 0">' + elSpan(result.xiShen||'', result.xiShen||result.yongShen) + '</div>');
+    html.push('</div></div>');
+    html.push('<p>' + result.yongShenReason + '</p>');
 
-    // 综合用神结论
-    var fys = result.finalYongShen || result.yongShen;
-    var fysMethod = result.finalYongShenMethod || '扶抑';
-    var fysReason = result.finalYongShenReason || result.yongShenReason;
-    html.push('<div style="padding:16px 20px;background:rgba(45,143,111,.06);border:2px solid var(--jade,#2d8f6f);border-radius:8px;margin:10px 0">');
-    html.push('<p style="font-size:.78rem;color:var(--jade);font-weight:700;letter-spacing:.08em">综合用神（' + fysMethod + '取用）</p>');
-    html.push('<p style="font-size:1.3rem;font-weight:900;color:var(--jade);margin:6px 0">' + elBgSpan(' ' + fys + ' ', fys) + '</p>');
-    html.push('<p>' + fysReason + '</p>');
-    html.push('</div>');
-
-    // 分项展示
-    html.push('<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0">');
-    // 调候
-    var thActive = result.needTiaohou && result.finalYongShenMethod === '调候';
-    html.push('<div style="padding:10px;border-radius:6px;background:' + (thActive ? 'rgba(45,143,111,.06)' : 'rgba(0,0,0,.02)') + ';border:1px solid ' + (thActive ? 'var(--jade)' : 'var(--border)') + ';text-align:center">');
-    html.push('<div style="font-size:.72rem;color:var(--ink-light)">调候用神</div>');
-    html.push('<div style="font-size:1rem;font-weight:700;margin:4px 0">' + (result.tiaohou || '不需调候') + '</div>');
-    if (thActive) html.push('<div style="font-size:.7rem;color:var(--jade)">✓ 采用</div>');
-    html.push('</div>');
-    // 通关
-    var tgActive = result.tongguan && result.finalYongShenMethod === '通关';
-    html.push('<div style="padding:10px;border-radius:6px;background:' + (tgActive ? 'rgba(45,143,111,.06)' : 'rgba(0,0,0,.02)') + ';border:1px solid ' + (tgActive ? 'var(--jade)' : 'var(--border)') + ';text-align:center">');
-    html.push('<div style="font-size:.72rem;color:var(--ink-light)">通关用神</div>');
-    html.push('<div style="font-size:1rem;font-weight:700;margin:4px 0">' + (result.tongguan || '不需通关') + '</div>');
-    if (tgActive) html.push('<div style="font-size:.7rem;color:var(--jade)">✓ 采用</div>');
-    html.push('</div>');
-    // 扶抑
-    var fyActive = result.finalYongShenMethod === '扶抑';
-    html.push('<div style="padding:10px;border-radius:6px;background:' + (fyActive ? 'rgba(45,143,111,.06)' : 'rgba(0,0,0,.02)') + ';border:1px solid ' + (fyActive ? 'var(--jade)' : 'var(--border)') + ';text-align:center">');
-    html.push('<div style="font-size:.72rem;color:var(--ink-light)">扶抑用神</div>');
-    html.push('<div style="font-size:1rem;font-weight:700;margin:4px 0">' + result.yongShen + '</div>');
-    if (fyActive) html.push('<div style="font-size:.7rem;color:var(--jade)">✓ 采用</div>');
-    html.push('</div>');
-    html.push('</div>');
-
-    // 调候详情
-    if (result.needTiaohou) {
-      html.push('<details class="yearly-detail"><summary class="yearly-summary"><span class="yr-palace">调候分析</span><span class="yr-gz">' + (result.tiaohou||'') + '</span></summary><div class="yearly-content"><p>' + result.tiaohouReason + '</p></div></details>');
-    }
-    if (result.tongguan) {
-      html.push('<details class="yearly-detail"><summary class="yearly-summary"><span class="yr-palace">通关分析</span><span class="yr-gz">' + result.tongguan + '</span></summary><div class="yearly-content"><p>' + result.tongguanReason + '</p></div></details>');
+    if (result.tiaohouNote) {
+      html.push('<p style="font-size:.85rem;padding:8px 12px;background:rgba(197,146,46,.06);border-left:3px solid var(--gold);border-radius:0 4px 4px 0;margin:8px 0">' + result.tiaohouNote + '</p>');
     }
 
-    html.push('<h4>忌神</h4>');
-    html.push('<div style="padding:14px 18px;background:rgba(197,61,67,.05);border-left:4px solid var(--vermillion,#c53d43);border-radius:0 4px 4px 0;margin:8px 0">');
-    html.push('<p style="font-size:1.1rem;font-weight:700;color:var(--vermillion,#c53d43);margin-bottom:6px">' + elBgSpan(' ' + result.jiShen + ' ', result.jiShen) + '</p>');
+    html.push('<h4>忌仇五行</h4>');
+    html.push('<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0">');
+    html.push('<div style="padding:16px;background:rgba(220,38,38,.05);border:2px solid var(--vermillion);border-radius:8px;text-align:center">');
+    html.push('<div style="font-size:.75rem;color:var(--vermillion);font-weight:700">忌神（最不利）</div>');
+    html.push('<div style="font-size:1.5rem;font-weight:900;margin:6px 0">' + elSpan(result.jiShen, result.jiShen) + '</div>');
+    html.push('</div>');
+    html.push('<div style="padding:16px;background:rgba(220,38,38,.03);border:1px solid var(--vermillion);border-radius:8px;text-align:center">');
+    html.push('<div style="font-size:.75rem;color:var(--vermillion);font-weight:700">仇神（生助忌神）</div>');
+    html.push('<div style="font-size:1.5rem;font-weight:900;margin:6px 0">' + elSpan(result.chouShen||'', result.chouShen||result.jiShen) + '</div>');
+    html.push('</div></div>');
     html.push('<p>' + result.jiShenReason + '</p>');
-    html.push('</div>');
 
     // 喜忌一览表
     var wxSheng2 = {'木':'水','火':'木','土':'火','金':'土','水':'金'};
@@ -1229,14 +1138,12 @@ const BaZi = (function () {
       else { rel = '官杀（克我）'; }
 
       if (wx === result.yongShen) { verdict = '用神'; desc = '命局最需要的五行，越多越好。'; }
+      else if (wx === (result.xiShen||'')) { verdict = '喜神'; desc = '辅助用神的五行，多多益善。'; }
       else if (wx === result.jiShen) { verdict = '忌神'; desc = '命局最忌讳的五行，越少越好。'; }
-      else if (wx === result.motherWx && result.isStrong) { verdict = '小忌'; desc = '生扶日主，身强不宜再生。'; }
-      else if (wx === result.motherWx && !result.isStrong) { verdict = '喜'; desc = '生扶日主，身弱需要助力。'; }
-      else if (wx === result.dayMasterWuxing && result.isStrong) { verdict = '忌'; desc = '同类帮身，身强不宜再帮。'; }
-      else if (wx === result.dayMasterWuxing && !result.isStrong) { verdict = '喜'; desc = '同类帮身，身弱需要帮助。'; }
-      else { verdict = '中'; desc = '对命局影响中性。'; }
+      else if (wx === (result.chouShen||'')) { verdict = '仇神'; desc = '生助忌神的五行，不宜过旺。'; }
+      else { verdict = '闲神'; desc = '对命局影响中性。'; }
 
-      var vColor = verdict === '用神' ? 'var(--jade)' : (verdict === '忌神' || verdict === '忌' || verdict === '小忌') ? 'var(--vermillion)' : verdict === '喜' ? 'var(--jade)' : 'var(--ink-light)';
+      var vColor = (verdict === '用神' || verdict === '喜神') ? 'var(--jade)' : (verdict === '忌神' || verdict === '仇神') ? 'var(--vermillion)' : 'var(--ink-light)';
       html.push('<tr><td>' + elSpan(wx, wx) + '</td><td>' + rel + '</td><td style="color:' + vColor + ';font-weight:700">' + verdict + '</td><td>' + desc + '</td></tr>');
     });
     html.push('</tbody></table>');
