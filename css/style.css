@@ -46,8 +46,12 @@ header h1{font-family:var(--font-h);font-weight:900;font-size:clamp(1.8rem,4.5vw
 .tst-detail{opacity:.65;font-size:.75rem}
 .tst-warn{display:block;color:#f59e0b;font-size:.78rem;margin-top:3px}
 .history-list{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
-.history-item{background:rgba(255,255,255,.08);border:1px solid rgba(197,146,46,.25);color:var(--gold-light,#e8d5a3);padding:4px 10px;border-radius:20px;font-size:.75rem;cursor:pointer;transition:all .15s;font-family:inherit}
-.history-item:hover{background:rgba(255,255,255,.15);border-color:var(--gold)}
+.history-item-wrap{display:inline-flex;align-items:center;gap:0;border-radius:20px;border:1px solid rgba(197,146,46,.25);overflow:hidden;transition:border-color .15s}
+.history-item-wrap:hover{border-color:var(--gold)}
+.history-item{background:rgba(255,255,255,.08);color:var(--gold-light,#e8d5a3);padding:4px 10px;font-size:.75rem;cursor:pointer;transition:all .15s;font-family:inherit;border:none}
+.history-item:hover{background:rgba(255,255,255,.15)}
+.history-del{background:none;border:none;border-left:1px solid rgba(197,146,46,.2);color:rgba(232,213,163,.5);padding:4px 7px;font-size:.8rem;cursor:pointer;transition:all .15s;line-height:1}
+.history-del:hover{color:#ff6b6b;background:rgba(255,107,107,.15)}
 
 /* ===== TABS ===== */
 .tabs{border-bottom:2px solid var(--border);padding-top:16px}

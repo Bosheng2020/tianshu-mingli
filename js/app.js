@@ -16,17 +16,26 @@
       if (h.length > 10) h = h.slice(0, 10);
       try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch(e) {}
     }
+    function deleteHistory(idx) {
+      var h = getHistory();
+      h.splice(idx, 1);
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch(e) {}
+      renderHistory();
+    }
     function renderHistory() {
       var h = getHistory();
-      if (h.length === 0) return;
       var container = document.getElementById('history-list');
       if (!container) return;
-      container.innerHTML = h.map(function(item, i) {
-        return '<button class="history-item" data-idx="'+i+'">' +
+      if (h.length === 0) { container.style.display = 'none'; container.innerHTML = ''; return; }
+      container.innerHTML = '<span style="font-size:.72rem;color:var(--gold-light);margin-right:4px">最近查询：</span>' + h.map(function(item, i) {
+        return '<span class="history-item-wrap">' +
+          '<button class="history-item" data-idx="'+i+'">' +
           item.year+'-'+item.month+'-'+item.day + ' ' + (item.hour||0)+':'+String(item.minute||0).padStart(2,'0') +
-          ' ' + (item.province||'') + (item.city||'') + ' ' + (item.gender==='male'?'男':'女') + '</button>';
+          ' ' + (item.province||'') + (item.city||'') + ' ' + (item.gender==='male'?'男':'女') + '</button>' +
+          '<button class="history-del" data-idx="'+i+'" title="删除">×</button>' +
+          '</span>';
       }).join('');
-      container.style.display = 'block';
+      container.style.display = 'flex';
       container.querySelectorAll('.history-item').forEach(function(btn) {
         btn.addEventListener('click', function() {
           var item = h[parseInt(this.dataset.idx)];
@@ -39,6 +48,12 @@
           if (item.province) { document.getElementById('birth-province').value = item.province; updateCities(); }
           document.querySelector('input[name="birth-gender"][value="'+item.gender+'"]').checked = true;
           document.getElementById('birth-form').dispatchEvent(new Event('submit'));
+        });
+      });
+      container.querySelectorAll('.history-del').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          deleteHistory(parseInt(this.dataset.idx));
         });
       });
     }
