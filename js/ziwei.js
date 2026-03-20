@@ -1242,7 +1242,8 @@ const ZiWei = (function () {
     html += '<div class="interp-card" style="padding:12px 16px;text-align:center" id="zw-nav">';
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">';
     var navItems = [
-      {id:'zw-sec-ming',label:'命宫主星'},{id:'zw-sec-sihua',label:'生年四化'},
+      {id:'zw-sec-ming',label:'命宫主星'},{id:'zw-sec-geju',label:'格局'},
+      {id:'zw-sec-sfszh',label:'三方四正'},{id:'zw-sec-sihua',label:'生年四化'},
       {id:'zw-sec-zihua',label:'自化'},{id:'zw-sec-laiyin',label:'来因宫'},
       {id:'zw-sec-stars',label:'六吉六煞'},{id:'zw-sec-palaces',label:'重要宫位'},
       {id:'zw-sec-dayun',label:'大运走势'},{id:'zw-sec-liunian',label:'逐年运势'}
@@ -1950,6 +1951,150 @@ const ZiWei = (function () {
         html += '</p>';
       });
 
+      html += '</div>';
+    }
+
+    // ===== 格局判断 =====
+    html += '<div class="interp-card"><h3 id="zw-sec-geju">命盘格局</h3>';
+    html += '<p style="font-size:.84rem;color:var(--ink-light)">格局是紫微斗数中特定的星曜组合，成格者运势加成显著。以下自动检测您命盘中存在的格局。</p>';
+
+    var GEJU_RULES = [
+      {name:'紫府同宫',cond:function(p){return hasStarPair(p,'紫微','天府')},type:'贵',desc:'帝相同宫，天生领袖气质。既有魄力又有稳重，大富大贵之格。适合从政从商，成就极高。'},
+      {name:'火贪格',cond:function(p){return hasStarPair(p,'贪狼','火星')},type:'富',desc:'火星贪狼同宫，主暴发暴富！赌性强、爆发力惊人。适合投机、创业，一夜暴富之格。但成败都极端。'},
+      {name:'铃贪格',cond:function(p){return hasStarPair(p,'贪狼','铃星')},type:'富',desc:'铃星贪狼同宫，与火贪格类似，主意外暴发。内敛型暴发，先蛰伏后一鸣惊人。'},
+      {name:'机月同梁',cond:function(p){return hasSFSZ(p,'天机')&&hasSFSZ(p,'太阴')&&hasSFSZ(p,'天同')&&hasSFSZ(p,'天梁')},type:'贵',desc:'天机太阴天同天梁会于三方四正，追求稳定的公职格局。适合政府机关、大型国企、事业单位。风险厌恶，深耕才能成功。'},
+      {name:'府相朝垣',cond:function(p){var guan=findPal('官禄');var cai=findPal('财帛');return guan&&cai&&(hasStar(guan,'天府')&&hasStar(cai,'天相')||hasStar(guan,'天相')&&hasStar(cai,'天府'))},type:'贵',desc:'天府天相分居官禄财帛朝命宫，食禄千锺之格。一生安稳富裕，个性稳重可靠。'},
+      {name:'日月并明',cond:function(p){var sy=findStar('太阳');var tn=findStar('太阴');return sy&&tn&&sy.brightness&&tn.brightness&&['庙','旺'].indexOf(sy.brightness)>=0&&['庙','旺'].indexOf(tn.brightness)>=0},type:'贵',desc:'太阳太阴皆庙旺，日月并辉之格！为人阳光正面，男命主贵女命夫荣。一生名利双收。'},
+      {name:'日月反背',cond:function(p){var sy=findStar('太阳');var tn=findStar('太阴');return sy&&tn&&sy.brightness&&tn.brightness&&['陷','不'].indexOf(sy.brightness.charAt(0))>=0&&['陷','不'].indexOf(tn.brightness.charAt(0))>=0},type:'凶',desc:'太阳太阴皆落陷，日月无光之格。辛劳奔波，早年不顺。但低调内敛，吃苦耐劳，大器晚成。'},
+      {name:'杀破狼',cond:function(p){return hasSFSZ(p,'七杀')&&hasSFSZ(p,'破军')&&hasSFSZ(p,'贪狼')},type:'变',desc:'七杀破军贪狼三方会见，最具变革精神的格局！一生多变化、多冒险、多开创。适合创业、改革、军警。不安于现状，越动越旺。'},
+      {name:'阳梁昌禄',cond:function(p){return hasSFSZ(p,'太阳')&&hasSFSZ(p,'天梁')&&hasSFSZ(p,'文昌')&&hasSFSZ(p,'禄存')},type:'贵',desc:'太阳天梁文昌禄存三方会聚，「状元格」！学业极佳，考试运旺。适合学术研究、公职考试、法律。'},
+      {name:'禄马交驰',cond:function(p){return hasStarPair(p,'禄存','天马')},type:'富',desc:'禄存天马同宫，财源流通之格！善于赚钱和流通资金。适合贸易、物流、销售。越忙越富。'},
+      {name:'三奇加会',cond:function(p){return hasSFSZ_hua(p,'禄')&&hasSFSZ_hua(p,'权')&&hasSFSZ_hua(p,'科')},type:'贵',desc:'化禄化权化科三奇在三方四正，机会比常人多20%！但仍需自己把握，格局再好也要努力。'},
+      {name:'日照雷门',cond:function(p){var ming=pals[mingIdx];return ming&&hasStar(ming,'太阳')&&hasStar(ming,'天梁')&&ming.earthlyBranch==='卯'},type:'贵',desc:'太阳天梁在卯宫坐命，朝气蓬勃之格！光明磊落，富贵荣华。'},
+      {name:'月朗天门',cond:function(p){var ming=pals[mingIdx];return ming&&hasStar(ming,'太阴')&&ming.earthlyBranch==='亥'},type:'贵',desc:'太阴在亥宫守命，月华当空之格！机敏可靠，不贵则富。'},
+      {name:'石中隐玉',cond:function(p){var ming=pals[mingIdx];return ming&&hasStar(ming,'巨门')&&(ming.earthlyBranch==='子'||ming.earthlyBranch==='午')},type:'贵',desc:'巨门在子午宫坐命，璞玉待磨之格。文艺婉约，第六感强。需经磨砺方显光华。'},
+      {name:'英星入庙',cond:function(p){var ming=pals[mingIdx];return ming&&hasStar(ming,'破军')&&(ming.earthlyBranch==='子'||ming.earthlyBranch==='午')},type:'变',desc:'破军在子午宫坐命，创造力极强之格！上限极高下限也低。适合开创性事业。'},
+      {name:'刑囚夹印',cond:function(p){return hasStarPair(p,'廉贞','天相')},type:'凶',desc:'廉贞天相同宫，易与律法官司有关。从事法律、纪检行业反而有利。需注意遵纪守法。'},
+      {name:'羊陀夹命',cond:function(p){var ming=pals[mingIdx];if(!ming)return false;var mp=(ming.earthlyBranch?pals.indexOf(ming):-1);if(mp<0)return false;var prev=pals.filter(function(pp){return pp.pos===(ming.pos+1)%12})[0];var next=pals.filter(function(pp){return pp.pos===(ming.pos+11)%12})[0];return prev&&next&&(hasStar(prev,'擎羊')&&hasStar(next,'陀罗')||hasStar(prev,'陀罗')&&hasStar(next,'擎羊'))},type:'凶',desc:'擎羊陀罗夹命宫，困顿之格。人生多阻碍，做事反复。但也锻炼意志力，晚年运好。'},
+    ];
+
+    // Helper functions for geju detection
+    function hasStar(palace, starName) {
+      return (palace.majorStars||[]).concat(palace.minorStars||[]).some(function(s){return s.name===starName});
+    }
+    function hasStarPair(unused, star1, star2) {
+      return pals.some(function(p){return hasStar(p,star1)&&hasStar(p,star2)});
+    }
+    function findPal(name) { return pals.find(function(p){return p.name===name}); }
+    function findStar(name) {
+      for (var fi=0;fi<pals.length;fi++) {
+        var allS=(pals[fi].majorStars||[]).concat(pals[fi].minorStars||[]);
+        for (var fj=0;fj<allS.length;fj++) { if (allS[fj].name===name) return allS[fj]; }
+      }
+      return null;
+    }
+    // Check if star exists in 命宫三方四正
+    function hasSFSZ(unused, starName) {
+      if (mingIdx < 0) return false;
+      var ming = pals[mingIdx];
+      var duiIdx = (ming.pos + 6) % 12;
+      var sh1Idx = (ming.pos + 4) % 12;
+      var sh2Idx = (ming.pos + 8) % 12;
+      var checkPals = [ming];
+      pals.forEach(function(p){if(p.pos===duiIdx||p.pos===sh1Idx||p.pos===sh2Idx)checkPals.push(p)});
+      return checkPals.some(function(p){return hasStar(p, starName)});
+    }
+    function hasSFSZ_hua(unused, huaChar) {
+      if (mingIdx < 0) return false;
+      var ming = pals[mingIdx];
+      var duiIdx = (ming.pos + 6) % 12;
+      var sh1Idx = (ming.pos + 4) % 12;
+      var sh2Idx = (ming.pos + 8) % 12;
+      var checkPals = [ming];
+      pals.forEach(function(p){if(p.pos===duiIdx||p.pos===sh1Idx||p.pos===sh2Idx)checkPals.push(p)});
+      return checkPals.some(function(p){
+        return (p.majorStars||[]).concat(p.minorStars||[]).some(function(s){return s.mutagen&&s.mutagen.indexOf(huaChar)>=0});
+      });
+    }
+
+    var foundGeju = [];
+    GEJU_RULES.forEach(function(rule) {
+      try { if (rule.cond(pals)) foundGeju.push(rule); } catch(e) {}
+    });
+
+    if (foundGeju.length > 0) {
+      foundGeju.forEach(function(g) {
+        var typeColor = g.type==='富'?'var(--gold)':g.type==='贵'?'var(--jade)':g.type==='变'?'#7c3aed':'var(--vermillion)';
+        var typeBg = g.type==='富'?'rgba(197,146,46,.06)':g.type==='贵'?'rgba(45,143,111,.06)':g.type==='变'?'rgba(124,58,237,.06)':'rgba(220,38,38,.06)';
+        html += '<div style="border-left:4px solid '+typeColor+';background:'+typeBg+';padding:12px 16px;margin:8px 0;border-radius:0 8px 8px 0">';
+        html += '<p style="font-size:1rem;font-weight:700;color:'+typeColor+'">'+g.name+' <span style="font-size:.75rem;padding:1px 8px;border-radius:10px;background:'+typeColor+';color:#fff">'+g.type+'格</span></p>';
+        html += '<p>'+g.desc+'</p>';
+        html += '</div>';
+      });
+    } else {
+      html += '<p>命盘中未检测到经典特殊格局。整体以星曜组合和四化配置为主导。</p>';
+    }
+    html += '</div>';
+
+    // ===== 三方四正解读 =====
+    if (mingIdx >= 0) {
+      var mingP = pals[mingIdx];
+      var duiPos = (mingP.pos + 6) % 12;
+      var sh1Pos = (mingP.pos + 4) % 12;
+      var sh2Pos = (mingP.pos + 8) % 12;
+      var duiPal = pals.find(function(p){return p.pos===duiPos});
+      var sh1Pal = pals.find(function(p){return p.pos===sh1Pos});
+      var sh2Pal = pals.find(function(p){return p.pos===sh2Pos});
+
+      html += '<div class="interp-card"><h3 id="zw-sec-sfszh">命宫三方四正</h3>';
+      html += '<p style="font-size:.84rem;color:var(--ink-light)">三方四正是紫微斗数论命的核心视角。命宫的三方包括对宫（迁移）和两个三合宫，这四个宫位的星曜共同决定命主的综合运势。</p>';
+
+      // 列出四个宫位
+      var sfszPals = [
+        {pal:mingP, label:'命宫（本宫）', role:'自身本质'},
+        {pal:duiPal, label:(duiPal?duiPal.name:'迁移')+'（对宫）', role:'外在表现、社交'},
+        {pal:sh1Pal, label:(sh1Pal?sh1Pal.name:'')+'（三合）', role:'辅助力量'},
+        {pal:sh2Pal, label:(sh2Pal?sh2Pal.name:'')+'（三合）', role:'辅助力量'}
+      ];
+
+      sfszPals.forEach(function(item) {
+        if (!item.pal) return;
+        var p = item.pal;
+        var majors = (p.majorStars||[]).filter(function(s){return s.name}).map(function(s){
+          return s.name + (s.brightness?'('+s.brightness+')':'') + (s.mutagen?' '+s.mutagen:'');
+        });
+        var minors = (p.minorStars||[]).filter(function(s){return s.name}).map(function(s){return s.name});
+        var isGood = minors.some(function(n){return ['文昌','文曲','左辅','右弼','天魁','天钺','禄存','天马'].indexOf(n)>=0});
+        var isBad = minors.some(function(n){return ['擎羊','陀罗','火星','铃星','地空','地劫'].indexOf(n)>=0});
+
+        html += '<div style="border-left:3px solid '+(item.pal===mingP?'var(--vermillion)':'var(--border)')+';padding:8px 14px;margin:6px 0;border-radius:0 6px 6px 0">';
+        html += '<p><strong>' + item.label + '</strong> ' + (p.heavenlyStem||'')+(p.earthlyBranch||'') + ' <span style="font-size:.8rem;color:var(--ink-light)">' + item.role + '</span></p>';
+        html += '<p>主星：' + (majors.join('、')||'无主星') + '</p>';
+        if (minors.length) html += '<p style="font-size:.85rem">辅星：' + minors.join('、') + '</p>';
+        html += '</div>';
+      });
+
+      // 综合评价
+      var totalMajors = [];
+      var totalGood = 0, totalBad = 0;
+      sfszPals.forEach(function(item) {
+        if (!item.pal) return;
+        (item.pal.majorStars||[]).forEach(function(s){if(s.name)totalMajors.push(s.name)});
+        (item.pal.minorStars||[]).forEach(function(s){
+          if(['文昌','文曲','左辅','右弼','天魁','天钺','禄存','天马'].indexOf(s.name)>=0) totalGood++;
+          if(['擎羊','陀罗','火星','铃星','地空','地劫'].indexOf(s.name)>=0) totalBad++;
+        });
+      });
+
+      html += '<h4>三方四正综合评价</h4>';
+      html += '<p>三方四正共有 <strong>' + totalMajors.length + '</strong> 颗主星、<strong style="color:var(--jade)">' + totalGood + '</strong> 颗吉星、<strong style="color:var(--vermillion)">' + totalBad + '</strong> 颗煞星。</p>';
+      if (totalGood > totalBad + 2) {
+        html += '<p style="color:var(--jade)">三方四正吉星远多于煞星，命主整体运势优越。做事多贵人相助，逢凶化吉能力强。</p>';
+      } else if (totalBad > totalGood + 2) {
+        html += '<p style="color:var(--vermillion)">三方四正煞星较多，命主人生挑战较大。但煞星也代表行动力和魄力，善用则为助力。需特别注意化解煞星的负面影响。</p>';
+      } else {
+        html += '<p>三方四正吉凶参半，命主运势有起有落。关键在于把握吉星带来的机会，化解煞星带来的挑战。</p>';
+      }
       html += '</div>';
     }
 
