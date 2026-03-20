@@ -213,7 +213,7 @@ const FengShui = (() => {
       var isGood = info.level.indexOf('吉') >= 0;
       html += '<details class="yearly-detail"' + (star==='生气'||star==='绝命'?' open':'') + '>';
       html += '<summary class="yearly-summary"><span style="color:'+info.color+';font-weight:700">' + info.icon + ' ' + star + '</span><span class="yr-gz">' + DIR_CN[dir] + '方</span><span class="yr-age">' + info.level + '</span></summary>';
-      html += '<div class="yearly-content"><p><strong>' + info.star + '</strong> — ' + info.meaning + '</p><p>' + info.use + '</p></div></details>';
+      html += '<div class="yearly-content"><p><strong>' + info.star + '</strong> — ' + info.use + '</p></div></details>';
     });
     html += '</div>';
 
