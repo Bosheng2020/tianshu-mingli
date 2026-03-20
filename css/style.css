@@ -80,8 +80,9 @@ header h1{font-family:var(--font-h);font-weight:900;font-size:clamp(1.8rem,4.5vw
 
 /* ===== TABS ===== */
 .tabs{border-bottom:2px solid var(--border);padding-top:16px}
-.tabs .container{display:flex;gap:2px}
-.tab{font-family:var(--font-h);font-size:.9rem;padding:10px 24px;border:1px solid transparent;border-bottom:none;border-radius:var(--r) var(--r) 0 0;background:transparent;color:var(--ink-light);cursor:pointer;transition:all .2s;position:relative;top:2px}
+.tabs .container{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
+.tabs .container::-webkit-scrollbar{display:none}
+.tab{font-family:var(--font-h);font-size:.9rem;padding:10px 24px;border:1px solid transparent;border-bottom:none;border-radius:var(--r) var(--r) 0 0;background:transparent;color:var(--ink-light);cursor:pointer;transition:all .2s;position:relative;top:2px;white-space:nowrap;flex-shrink:0}
 .tab:hover{color:var(--ink);background:rgba(0,0,0,.02)}
 .tab.active{color:var(--vermillion);background:var(--cream);border-color:var(--border);font-weight:700;border-bottom:2px solid var(--cream);z-index:1}
 
