@@ -428,9 +428,9 @@
 
             var bar = document.createElement('div');
             bar.className = 'export-bar';
-            bar.innerHTML = '<button class="export-btn" data-type="image" title="\u4FDD\u5B58\u4E3A\u56FE\u7247">\uD83D\uDCF7 \u4FDD\u5B58\u56FE\u7247</button>' +
-                '<button class="export-btn" data-type="copy" title="\u590D\u5236\u6587\u5B57">\uD83D\uDCCB \u590D\u5236\u6587\u5B57</button>' +
-                '<button class="export-btn" data-type="share" title="\u5206\u4EAB">\uD83D\uDD17 \u5206\u4EAB</button>';
+            bar.innerHTML = '<button class="export-btn" data-type="pdf" title="保存为PDF">📄 保存PDF</button>' +
+                '<button class="export-btn" data-type="copy" title="复制文字">📋 复制文字</button>' +
+                '<button class="export-btn" data-type="share" title="分享">🔗 分享</button>';
             area.insertBefore(bar, area.firstChild);
         }
     }
@@ -444,8 +444,8 @@
 
         var exportType = btn.getAttribute('data-type');
 
-        if (exportType === 'image') {
-            exportAsImage(area);
+        if (exportType === 'pdf') {
+            exportAsPDF(area);
         } else if (exportType === 'copy') {
             exportAsText(area);
         } else if (exportType === 'share') {
@@ -453,39 +453,66 @@
         }
     }
 
-    function exportAsImage(area) {
-        if (typeof html2canvas !== 'function') {
-            showToast('\u56FE\u7247\u5BFC\u51FA\u529F\u80FD\u52A0\u8F7D\u4E2D\uFF0C\u8BF7\u7A0D\u5019\u518D\u8BD5');
-            return;
-        }
-        // Hide export bar during capture
-        var bar = area.querySelector('.export-bar');
-        if (bar) bar.style.display = 'none';
+    function exportAsPDF(area) {
+        // Open a new window with just the result content, styled for print
+        var content = area.innerHTML;
+        // Remove export bars from the print content
+        var temp = document.createElement('div');
+        temp.innerHTML = content;
+        var bars = temp.querySelectorAll('.export-bar');
+        for (var i = 0; i < bars.length; i++) bars[i].remove();
+        var stars = temp.querySelectorAll('.bookmark-star');
+        for (var j = 0; j < stars.length; j++) stars[j].remove();
 
-        html2canvas(area, {
-            backgroundColor: null,
-            scale: 2,
-            useCORS: true,
-            logging: false
-        }).then(function(canvas) {
-            if (bar) bar.style.display = '';
-            var link = document.createElement('a');
-            link.download = '\u5929\u67A2\u547D\u7406_' + new Date().toISOString().slice(0, 10) + '.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            showToast('\u56FE\u7247\u5DF2\u4FDD\u5B58');
-        }).catch(function() {
-            if (bar) bar.style.display = '';
-            showToast('\u56FE\u7247\u5BFC\u51FA\u5931\u8D25');
-        });
+        var printWin = window.open('', '_blank', 'width=800,height=600');
+        if (!printWin) { showToast('请允许弹出窗口后重试'); return; }
+
+        // Get computed styles for CSS variables
+        var cs = getComputedStyle(document.documentElement);
+        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+        printWin.document.write([
+            '<!DOCTYPE html><html><head><meta charset="UTF-8">',
+            '<title>天枢命理 — 命理报告</title>',
+            '<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&display=swap" rel="stylesheet">',
+            '<style>',
+            ':root{--ink:#1a1a2e;--ink-light:#6b7280;--vermillion:#c53d43;--gold:#c5922e;--jade:#2d8f6f;--cream:#faf8f5;--card:#fff;--border:#e8e4dd;--font-h:"Noto Serif SC",serif;--font-b:"Noto Serif SC",sans-serif;--r:8px;--r-lg:12px;--shadow:0 1px 3px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.07);--wood:#2e7d32;--fire:#c62828;--earth:#bf8c30;--metal:#607d8b;--water:#1565c0}',
+            'body{font-family:var(--font-b);color:var(--ink);line-height:1.75;background:#fff;padding:20px 30px;max-width:900px;margin:0 auto}',
+            '.interp-card{border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 22px;margin:12px 0;background:var(--card);page-break-inside:avoid}',
+            'h2,h3,h4{font-family:var(--font-h);margin:12px 0 8px}',
+            'h2{font-size:1.4rem;color:var(--vermillion);text-align:center;border-bottom:2px solid var(--gold);padding-bottom:8px}',
+            'h3{font-size:1.1rem;color:var(--ink)}',
+            'details{border:1px solid var(--border);border-radius:var(--r);margin:6px 0;padding:8px 12px}',
+            'summary{cursor:pointer;font-weight:600}',
+            '.dayun-timeline{display:flex;gap:6px;overflow:visible;flex-wrap:wrap;padding:8px 0}',
+            '.dayun-item{min-width:80px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);text-align:center;font-size:.78rem}',
+            '.dayun-item.current{border-color:var(--vermillion);background:rgba(197,61,67,.06)}',
+            '.print-header{text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid var(--gold)}',
+            '.print-header h1{font-family:var(--font-h);font-size:1.6rem;color:var(--gold);letter-spacing:.15em}',
+            '.print-header p{font-size:.8rem;color:var(--ink-light);margin-top:4px}',
+            '.print-footer{text-align:center;margin-top:30px;padding-top:12px;border-top:1px solid var(--border);font-size:.75rem;color:var(--ink-light)}',
+            '@media print{body{padding:10px}@page{margin:15mm 10mm;size:A4}}',
+            '</style></head><body>',
+            '<div class="print-header"><h1>天枢命理</h1><p>命理报告 · ' + new Date().toLocaleDateString('zh-CN') + '</p></div>',
+            temp.innerHTML,
+            '<div class="print-footer"><p>天枢命理 · 命由天定，运由己造 · 仅供参考</p></div>',
+            '</body></html>'
+        ].join(''));
+        printWin.document.close();
+
+        // Wait for fonts to load then print
+        setTimeout(function() {
+            printWin.print();
+            showToast('PDF保存窗口已打开');
+        }, 800);
     }
 
     function exportAsText(area) {
         var text = area.innerText || area.textContent || '';
         // Remove export button text from the copied content
-        text = text.replace(/[\uD83D\uDCF7] \u4FDD\u5B58\u56FE\u7247/g, '');
-        text = text.replace(/[\uD83D\uDCCB] \u590D\u5236\u6587\u5B57/g, '');
-        text = text.replace(/[\uD83D\uDD17] \u5206\u4EAB/g, '');
+        text = text.replace(/📄 保存PDF/g, '');
+        text = text.replace(/📋 复制文字/g, '');
+        text = text.replace(/🔗 分享/g, '');
         text = text.trim();
 
         if (navigator.clipboard && navigator.clipboard.writeText) {
