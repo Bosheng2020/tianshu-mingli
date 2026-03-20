@@ -128,9 +128,11 @@ select:focus,input:focus{outline:none;border-color:var(--vermillion);box-shadow:
 .ziwei-header h2{font-family:var(--font-h);color:var(--ink);font-size:1.3rem;margin-bottom:8px}
 .ziwei-info{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--ink-light)}
 /* Wrapper for horizontal scroll on mobile */
-.ziwei-grid-wrap{margin:16px 0 24px}
-.ziwei-grid{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--ink);border-radius:var(--r);box-shadow:var(--shadow-md);width:100%}
-.ziwei-cell{border:1px solid var(--border);padding:8px 10px;background:var(--card);min-height:105px;font-size:.78rem;transition:background .15s;position:relative}
+.ziwei-grid-wrap{margin:16px 0 24px;position:relative}
+.ziwei-grid{display:grid;grid-template-columns:repeat(4,1fr);border-collapse:collapse;box-shadow:var(--shadow-md);width:100%;overflow:hidden;border:2px solid var(--ink)}
+/* SVG overlay for flying star lines */
+.fly-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+.ziwei-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 10px;background:var(--card);min-height:105px;font-size:.78rem;transition:background .15s;position:relative}
 .ziwei-cell:hover{background:#fefdfb}
 .ziwei-cell.center-cell{background:var(--cream);min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 .ziwei-cell.ming-palace{background:rgba(197,61,67,.03);border-color:rgba(197,61,67,.15)}

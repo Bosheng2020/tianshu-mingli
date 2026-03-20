@@ -1134,7 +1134,7 @@ const ZiWei = (function () {
 
     // ===== 4x4 GRID =====
     var grid = [[3,4,5,6],[2,'c1','c2',7],[1,'c3','c4',8],[0,11,10,9]];
-    html += '<div class="ziwei-grid-wrap"><div class="ziwei-grid">';
+    html += '<div class="ziwei-grid-wrap"><svg class="fly-svg" id="fly-svg"></svg><div class="ziwei-grid">';
     grid.forEach(function(row) {
       row.forEach(function(cell) {
         if (typeof cell === 'number') {
@@ -1334,6 +1334,77 @@ const ZiWei = (function () {
 
       document.querySelectorAll('.ziwei-cell').forEach(function(c){c.style.outline='none'});
       el.style.outline = '2px solid #c5922e';
+
+      // ===== Draw SVG flying star lines =====
+      var svg = document.getElementById('fly-svg');
+      if (svg) {
+        var gridEl = svg.parentElement.querySelector('.ziwei-grid');
+        if (gridEl) {
+          var gridRect = gridEl.getBoundingClientRect();
+          var wrapRect = svg.parentElement.getBoundingClientRect();
+          svg.setAttribute('viewBox', '0 0 ' + wrapRect.width + ' ' + wrapRect.height);
+          svg.style.width = wrapRect.width + 'px';
+          svg.style.height = wrapRect.height + 'px';
+
+          // Build cell index → center point map
+          var cells = gridEl.querySelectorAll('.ziwei-cell');
+          var cellCenters = {};
+          cells.forEach(function(c) {
+            var palIdx = c.getAttribute('data-palace-idx');
+            if (palIdx !== null) {
+              var r = c.getBoundingClientRect();
+              cellCenters[palIdx] = {
+                x: r.left - wrapRect.left + r.width / 2,
+                y: r.top - wrapRect.top + r.height / 2
+              };
+            }
+          });
+
+          // Build palaceName → cellIdx map
+          var nameToIdx = {};
+          d.palData.forEach(function(pp, pi) { nameToIdx[pp.name] = pi; });
+
+          // Draw lines
+          var svgHTML = '<defs>';
+          huaColor.forEach(function(c, i) {
+            svgHTML += '<marker id="arrow' + i + '" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="' + c + '"/></marker>';
+          });
+          svgHTML += '</defs>';
+
+          var sourceCenter = cellCenters[idx];
+          if (sourceCenter) {
+            row.forEach(function(star, i) {
+              var targetPalace = d.starPal[star] || '';
+              var targetIdx = nameToIdx[targetPalace];
+              if (targetIdx === undefined || !cellCenters[targetIdx]) return;
+              var tc = cellCenters[targetIdx];
+
+              if (targetIdx === idx) {
+                // Self-hua: draw a small arc loop
+                svgHTML += '<path d="M' + (sourceCenter.x+10) + ' ' + (sourceCenter.y-15) + ' C' + (sourceCenter.x+35) + ' ' + (sourceCenter.y-40) + ' ' + (sourceCenter.x-35) + ' ' + (sourceCenter.y-40) + ' ' + (sourceCenter.x-10) + ' ' + (sourceCenter.y-15) + '" fill="none" stroke="' + huaColor[i] + '" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrow' + i + ')" opacity="0.8"/>';
+              } else {
+                // Shorten line to not overlap cell center
+                var dx = tc.x - sourceCenter.x, dy = tc.y - sourceCenter.y;
+                var dist = Math.sqrt(dx*dx + dy*dy);
+                var shortenS = 20, shortenE = 20;
+                var sx = sourceCenter.x + dx/dist * shortenS;
+                var sy = sourceCenter.y + dy/dist * shortenS;
+                var ex = tc.x - dx/dist * shortenE;
+                var ey = tc.y - dy/dist * shortenE;
+                // Offset parallel lines slightly so they don't overlap
+                var offsetX = -dy/dist * (i-1.5) * 4;
+                var offsetY = dx/dist * (i-1.5) * 4;
+
+                svgHTML += '<line x1="' + (sx+offsetX) + '" y1="' + (sy+offsetY) + '" x2="' + (ex+offsetX) + '" y2="' + (ey+offsetY) + '" stroke="' + huaColor[i] + '" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow' + i + ')" opacity="0.75"/>';
+                // Label at midpoint
+                var mx = (sx+ex)/2 + offsetX, my = (sy+ey)/2 + offsetY - 4;
+                svgHTML += '<text x="' + mx + '" y="' + my + '" font-size="10" fill="' + huaColor[i] + '" font-weight="700" text-anchor="middle">' + huaFull[i].charAt(1) + '</text>';
+              }
+            });
+          }
+          svg.innerHTML = svgHTML;
+        }
+      }
 
       // helper: 宫 suffix
       function gn(name) { return name.endsWith('宫') ? name : name + '宫'; }
