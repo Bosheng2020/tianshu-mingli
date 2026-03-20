@@ -656,12 +656,22 @@ const BaZi = (function () {
         finalYongShenMethod = '扶抑';
         finalYongShenReason = '以扶抑取用：' + yongShenReason;
       }
-      // 防止用神忌神相同：当调候/通关用神恰好等于扶抑忌神时，调整忌神
-      if (finalYongShen === jiShen) {
-        // 忌神改为克用神的五行
-        var keYS = {'木':'金','火':'水','土':'木','金':'火','水':'土'};
-        jiShen = keYS[finalYongShen] || jiShen;
-        jiShenReason = '忌' + jiShen + '。因综合用神为' + finalYongShen + '（' + finalYongShenMethod + '），忌神调整为克制用神的' + jiShen + '，避免冲突。';
+      // 统一：用综合用神覆盖扶抑用神，保证全局一致
+      yongShen = finalYongShen;
+      yongShenReason = finalYongShenReason;
+
+      // 忌神：取克用神最强的五行，确保不与用神相同
+      var keYS = {'木':'金','火':'水','土':'木','金':'火','水':'土'};
+      var shengYS = {'木':'水','火':'木','土':'火','金':'土','水':'金'};
+      // 忌神优先取：克用神的五行（破坏用神）
+      var bestJi = keYS[finalYongShen];
+      // 如果克用神的五行就是日主本身五行且身弱，换成泄用神的五行
+      if (bestJi === dayMasterWx && !isStrong) {
+        bestJi = WX_KE[finalYongShen] || keYS[finalYongShen];
+      }
+      if (bestJi && bestJi !== finalYongShen) {
+        jiShen = bestJi;
+        jiShenReason = '忌' + jiShen + '。' + jiShen + '克制用神' + finalYongShen + '，是命局中最不利的五行。大运流年遇' + jiShen + '时运势受阻。';
       }
     })();
 
@@ -828,7 +838,9 @@ const BaZi = (function () {
   function render(result) {
     // If result has .ec (lunar-javascript EightChar), convert to our format
     if (result.ec && !result.pillars) {
-      result = convertFromLunarJS(result);
+      var converted = convertFromLunarJS(result);
+      // Copy converted data back to original object so FengShui can access it
+      for (var ck in converted) { result[ck] = converted[ck]; }
     }
 
     var html = [];
