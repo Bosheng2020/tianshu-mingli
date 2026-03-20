@@ -2033,7 +2033,7 @@ const ZiWei = (function () {
 
     var foundGeju = [];
     GEJU_RULES.forEach(function(rule) {
-      try { if (rule.cond(pals)) foundGeju.push(rule); } catch(e) {}
+      try { if (rule.cond(pals)) foundGeju.push(rule); } catch(e) { console.warn('格局检测:', rule.name, e.message); }
     });
 
     if (foundGeju.length > 0) {

@@ -782,15 +782,29 @@
 
 
     // ========================================================
-    // Periodic Init: add export buttons and bookmark stars
+    // Smart Init: MutationObserver instead of setInterval
     // ========================================================
-    setInterval(function() {
+    function refreshUI() {
         addExportButtons();
         addBookmarkStars();
-    }, 2000);
+    }
+
+    // Watch for DOM changes in result areas (new content rendered)
+    var observer = new MutationObserver(function(mutations) {
+        // Debounce: only refresh once per batch of mutations
+        clearTimeout(observer._timer);
+        observer._timer = setTimeout(refreshUI, 300);
+    });
+
+    // Observe all result areas + main content
+    document.querySelectorAll('.result-area').forEach(function(area) {
+        observer.observe(area, { childList: true, subtree: true });
+    });
+    // Also observe tab switches
+    var mainEl = document.querySelector('main');
+    if (mainEl) observer.observe(mainEl, { childList: true, subtree: false });
 
     // Run once immediately
-    addExportButtons();
-    addBookmarkStars();
+    refreshUI();
 
 })();

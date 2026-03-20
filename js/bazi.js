@@ -516,10 +516,10 @@ const BaZi = (function () {
 
     // Additional info from library
     var taiYuan = '', taiXi = '', mingGong = '', shenGong = '';
-    try { taiYuan = ec.getTaiYuan() + '（' + ec.getTaiYuanNaYin() + '）'; } catch(e){}
-    try { taiXi = ec.getTaiXi() + '（' + ec.getTaiXiNaYin() + '）'; } catch(e){}
-    try { mingGong = ec.getMingGong() + '（' + ec.getMingGongNaYin() + '）'; } catch(e){}
-    try { shenGong = ec.getShenGong() + '（' + ec.getShenGongNaYin() + '）'; } catch(e){}
+    try { taiYuan = ec.getTaiYuan() + '（' + ec.getTaiYuanNaYin() + '）'; } catch(e){ console.warn('TaiYuan:', e.message); }
+    try { taiXi = ec.getTaiXi() + '（' + ec.getTaiXiNaYin() + '）'; } catch(e){ console.warn('TaiXi:', e.message); }
+    try { mingGong = ec.getMingGong() + '（' + ec.getMingGongNaYin() + '）'; } catch(e){ console.warn('MingGong:', e.message); }
+    try { shenGong = ec.getShenGong() + '（' + ec.getShenGongNaYin() + '）'; } catch(e){ console.warn('ShenGong:', e.message); }
 
     // 大运 from library
     var dayunList = [];

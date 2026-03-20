@@ -4,6 +4,7 @@
  * 邮箱验证码登录，无需外部服务
  */
 const express = require('express');
+const compression = require('compression');
 const path = require('path');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
@@ -12,6 +13,7 @@ function uuidv4() { return crypto.randomUUID(); }
 
 const app = express();
 const PORT = process.env.PORT || 3888;
+const ADMIN_KEY = process.env.ADMIN_KEY || 'tianshu2026';
 
 // ===== Database Setup =====
 const db = new Database(path.join(__dirname, 'tianshu.db'));
@@ -56,11 +58,48 @@ db.exec(`
 `);
 
 // ===== Middleware =====
+app.use(compression()); // gzip压缩，减少60-70%传输体积
 app.use(express.json());
-// Static files — exclude /api/ routes so they hit Express handlers first
+
+// 安全响应头
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// 全局API限流：同一IP每分钟最多60次请求
+const rateLimitMap = {};
+app.use('/api/', (req, res, next) => {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.connection?.remoteAddress || 'unknown';
+  const now = Date.now();
+  if (!rateLimitMap[ip]) rateLimitMap[ip] = [];
+  rateLimitMap[ip] = rateLimitMap[ip].filter(t => now - t < 60000);
+  if (rateLimitMap[ip].length >= 60) {
+    return res.status(429).json({ error: '请求太频繁，请稍后再试' });
+  }
+  rateLimitMap[ip].push(now);
+  next();
+});
+// 每5分钟清理过期的限流记录
+setInterval(() => {
+  const now = Date.now();
+  for (const ip in rateLimitMap) {
+    rateLimitMap[ip] = rateLimitMap[ip].filter(t => now - t < 60000);
+    if (rateLimitMap[ip].length === 0) delete rateLimitMap[ip];
+  }
+}, 300000);
+
+// Static files — JS/CSS缓存7天（配合?t=xxx缓存破坏），其他文件不缓存
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
-  express.static(__dirname, {maxAge: 0, etag: false})(req, res, next);
+  const isAsset = /\.(js|css|svg|png|jpg|ico|woff2?)(\?.*)?$/.test(req.path);
+  express.static(__dirname, {
+    maxAge: isAsset ? '7d' : 0,
+    etag: true
+  })(req, res, next);
 });
 
 // ===== Analytics: 访问统计 + 生辰记录 (SQLite持久化) =====
@@ -120,7 +159,7 @@ app.post('/api/record', (req, res) => {
 
 // API: Get stats (简单密码保护)
 app.get('/api/stats', (req, res) => {
-  if (req.query.key !== 'tianshu2026') return res.status(403).json({ error: '无权访问' });
+  if (req.query.key !== ADMIN_KEY) return res.status(403).json({ error: '无权访问' });
 
   try {
     const totalVisits = db.prepare("SELECT COUNT(*) as c FROM analytics WHERE type = 'visit'").get().c;

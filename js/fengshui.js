@@ -194,7 +194,7 @@ const FengShui = (() => {
           }
         }
       }
-    } catch(e) {}
+    } catch(e) { console.warn('立春计算:', e.message); }
     var flyGrid = getYearFlyStars(fsYear);
 
     // Extract birth info for display
@@ -221,7 +221,7 @@ const FengShui = (() => {
         monthFly.monthCN = nowL.getMonthInChinese();
         monthFly.yearZhi = yearZhi;
       }
-    } catch(e) {}
+    } catch(e) { console.warn('流月飞星:', e.message); }
 
     return { ys:ys, ys2:ys2, js:js, guaNum:guaNum, guaName:guaName, guaGroup:guaGroup, guaDirs:guaDirs, flyGrid:flyGrid, monthFly:monthFly, currentYear:fsYear, birthYear:birthYear, gender:gender, birthInfo:birthInfo, dayMasterWx:dayMasterWx, strengthDesc:strengthDesc };
   }
