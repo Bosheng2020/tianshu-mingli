@@ -1760,49 +1760,6 @@ const ZiWei = (function () {
       html += '<p><strong style="color:' + color + '">' + m.star + ' ' + fullLabel + '</strong> 在' + gong(m.palace) + (pd ? ' — ' + pd : '') + '</p>';
     });
 
-    // 飞星派：宫干四化（每宫天干飞出的四化）
-    html += '<h4>飞星四化（宫干飞化）</h4>';
-    html += '<p style="font-size:.84rem;color:var(--ink-light)">飞星派的核心：每个宫位的天干各自飞出禄权科忌四化到其他宫位，形成宫与宫之间的能量关系网络。</p>';
-
-    // 天干四化表
-    var SIHUA_TABLE = {
-      '甲':['廉贞','破军','武曲','太阳'],'乙':['天机','天梁','紫微','太阴'],
-      '丙':['天同','天机','文昌','廉贞'],'丁':['太阴','天同','天机','巨门'],
-      '戊':['贪狼','太阴','右弼','天机'],'己':['武曲','贪狼','天梁','文曲'],
-      '庚':['太阳','武曲','太阴','天同'],'辛':['巨门','太阳','文曲','文昌'],
-      '壬':['天梁','紫微','左辅','武曲'],'癸':['破军','巨门','太阴','贪狼']
-    };
-
-    // Show key palace flying stars (命宫, 官禄, 财帛, 夫妻)
-    var keyFlyPalaces = ['命宫','官禄','财帛','夫妻','福德','迁移'];
-    keyFlyPalaces.forEach(function(palaceName) {
-      var pal = pals.find(function(p){return p.name === palaceName});
-      if (!pal || !pal.heavenlyStem) return;
-      var stem = pal.heavenlyStem;
-      var sihuaRow = SIHUA_TABLE[stem];
-      if (!sihuaRow) return;
-
-      html += '<details class="yearly-detail"><summary class="yearly-summary">';
-      html += '<span class="yr-year">' + palaceName + '宫</span>';
-      html += '<span class="yr-gz">' + stem + '干</span>';
-      html += '<span style="font-size:.75rem;color:var(--ink-light)">飞 ' + sihuaRow.map(function(s,i){return s+huaFull[i].charAt(1)}).join(' ') + '</span>';
-      html += '</summary><div class="yearly-content">';
-
-      // Find where each star lands
-      sihuaRow.forEach(function(starName, idx) {
-        var landPalace = '';
-        pals.forEach(function(pp) {
-          (pp.majorStars||[]).concat(pp.minorStars||[]).forEach(function(ss) {
-            if (ss.name === starName) landPalace = pp.name;
-          });
-        });
-        if (landPalace) {
-          var isSelf = (landPalace === palaceName);
-          html += '<p>' + '<strong style="color:' + huaColors[idx] + '">' + starName + ' ' + huaFull[idx] + '</strong> → ' + gong(landPalace) + (isSelf ? ' <span style="color:var(--vermillion);font-weight:700">（自化' + huaFull[idx].charAt(1) + '）</span>' : '') + '</p>';
-        }
-      });
-      html += '</div></details>';
-    });
     html += '</div>';
 
     // ===== 自化解读 =====
