@@ -12,6 +12,31 @@
   --font-b:"Noto Serif SC","PingFang SC","Microsoft YaHei",sans-serif;
   --r:8px; --r-lg:12px;
 }
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] {
+  --ink:#e8e4dd; --ink-light:#9ca3af; --vermillion:#e06070; --vermillion-dark:#c53d43;
+  --gold:#daa940; --gold-light:#c5922e; --jade:#3db88a;
+  --cream:#121218; --card:#1a1a24; --border:#2a2a38; --border-light:#222230;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.2);
+  --shadow-md:0 4px 12px rgba(0,0,0,.3);
+  --shadow-lg:0 8px 30px rgba(0,0,0,.4);
+  --wood:#4caf50; --fire:#ef5350; --earth:#d4a030; --metal:#90a4ae; --water:#42a5f5;
+}
+[data-theme="dark"] header{background:linear-gradient(135deg,#0d0d15 0%,#1a1025 50%,#0d0d15 100%)}
+[data-theme="dark"] .birth-info-bar{background:linear-gradient(160deg,#0d0d18,#151020,#0d0d18)}
+[data-theme="dark"] .birth-info-bar select,[data-theme="dark"] .birth-info-bar input{background:rgba(255,255,255,.05);border-color:rgba(197,146,46,.2)}
+[data-theme="dark"] .tab.active{background:var(--cream);border-color:var(--border);border-bottom-color:var(--cream)}
+[data-theme="dark"] .interp-card{background:var(--card);border-color:var(--border)}
+[data-theme="dark"] img{opacity:.85}
+
+/* Theme toggle button */
+.theme-toggle{position:absolute;top:12px;right:16px;background:none;border:1px solid rgba(197,146,46,.3);border-radius:20px;padding:4px 12px;color:var(--gold-light);font-size:.78rem;cursor:pointer;transition:all .2s;font-family:var(--font-h);z-index:10}
+.theme-toggle:hover{background:rgba(197,146,46,.15);border-color:var(--gold)}
+
+.lang-toggle{position:absolute;top:12px;left:16px;background:none;border:1px solid rgba(197,146,46,.3);border-radius:20px;padding:4px 12px;color:var(--gold-light);font-size:.78rem;cursor:pointer;transition:all .2s;font-family:var(--font-h);z-index:10}
+.lang-toggle:hover{background:rgba(197,146,46,.15);border-color:var(--gold)}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
 body{font-family:var(--font-b);color:var(--ink);line-height:1.75;background:var(--cream);min-height:100vh}
