@@ -1199,8 +1199,17 @@ const BaZi = (function () {
         var color = zhiColors[rel.type] || 'var(--ink)';
         var isGood = (rel.type === '合' || rel.type === '三合');
         var bg = isGood ? 'rgba(22,163,74,.04)' : 'rgba(220,38,38,.04)';
+        // Handle both field formats (zhi1/zhi2 or members array)
+        var title = '';
+        if (rel.zhi1 && rel.pillar1) {
+          title = rel.pillar1 + '支' + rel.zhi1 + ' ' + rel.type + ' ' + rel.pillar2 + '支' + rel.zhi2;
+        } else if (rel.members) {
+          title = rel.members.join('') + ' ' + (rel.name || rel.type);
+        } else {
+          title = rel.type;
+        }
         html.push('<div style="border-left:3px solid '+color+';background:'+bg+';padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">');
-        html.push('<p><strong style="color:'+color+'">' + icon + ' ' + rel.pillar1 + '支' + rel.zhi1 + ' ' + rel.type + ' ' + rel.pillar2 + '支' + rel.zhi2 + '</strong></p>');
+        html.push('<p><strong style="color:'+color+'">' + icon + ' ' + title + '</strong></p>');
         if (rel.desc) html.push('<p style="font-size:.88rem">' + rel.desc + '</p>');
         html.push('</div>');
       });
