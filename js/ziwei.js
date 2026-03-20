@@ -774,7 +774,7 @@ const ZiWei = (function () {
     chart.palaces.forEach(function (p) { byPos[p.pos] = p; });
 
     // ---- 4x4 Grid ----
-    html += '<div class="ziwei-grid">';
+    html += '<div class="ziwei-grid-wrap"><div class="ziwei-grid">';
     GRID_ORDER.forEach(function (row, rowIdx) {
       row.forEach(function (pos, colIdx) {
         if (pos !== null) {
@@ -1134,7 +1134,7 @@ const ZiWei = (function () {
 
     // ===== 4x4 GRID =====
     var grid = [[3,4,5,6],[2,'c1','c2',7],[1,'c3','c4',8],[0,11,10,9]];
-    html += '<div class="ziwei-grid">';
+    html += '<div class="ziwei-grid-wrap"><div class="ziwei-grid">';
     grid.forEach(function(row) {
       row.forEach(function(cell) {
         if (typeof cell === 'number') {
@@ -1229,7 +1229,7 @@ const ZiWei = (function () {
         }
       });
     });
-    html += '</div>';
+    html += '</div></div>';
 
     // Flying star panel (shown when clicking a palace cell)
     html += '<div id="flying-star-panel" style="display:none;margin:-12px 0 16px;padding:14px 18px;background:var(--card,#fff);border:2px solid var(--gold,#c5922e);border-radius:8px;box-shadow:var(--shadow-md);animation:fadeIn .2s ease">';

@@ -84,7 +84,12 @@ tr:hover td{background:#334155}
 </div>
 
 <script>
-var API = '/api/stats?key=tianshu2026';
+var _adminKey = sessionStorage.getItem('adminKey');
+if (!_adminKey) {
+  _adminKey = prompt('请输入管理密码：');
+  if (_adminKey) sessionStorage.setItem('adminKey', _adminKey);
+}
+var API = '/api/stats?key=' + encodeURIComponent(_adminKey || '');
 var IP_API = 'https://ipapi.co/IP/json/'; // free IP geolocation
 
 var ipCache = {};

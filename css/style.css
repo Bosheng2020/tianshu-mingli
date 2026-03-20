@@ -45,6 +45,9 @@ header h1{font-family:var(--font-h);font-weight:900;font-size:clamp(1.8rem,4.5vw
 .tst-label{color:var(--gold-light);font-family:var(--font-h);font-weight:600;margin-right:6px}
 .tst-detail{opacity:.65;font-size:.75rem}
 .tst-warn{display:block;color:#f59e0b;font-size:.78rem;margin-top:3px}
+.history-list{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.history-item{background:rgba(255,255,255,.08);border:1px solid rgba(197,146,46,.25);color:var(--gold-light,#e8d5a3);padding:4px 10px;border-radius:20px;font-size:.75rem;cursor:pointer;transition:all .15s;font-family:inherit}
+.history-item:hover{background:rgba(255,255,255,.15);border-color:var(--gold)}
 
 /* ===== TABS ===== */
 .tabs{border-bottom:2px solid var(--border);padding-top:16px}
@@ -124,7 +127,9 @@ select:focus,input:focus{outline:none;border-color:var(--vermillion);box-shadow:
 .ziwei-header{margin-bottom:16px}
 .ziwei-header h2{font-family:var(--font-h);color:var(--ink);font-size:1.3rem;margin-bottom:8px}
 .ziwei-info{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--ink-light)}
-.ziwei-grid{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--ink);border-radius:var(--r);overflow-x:auto;overflow-y:hidden;margin:16px 0 24px;box-shadow:var(--shadow-md);min-width:0}
+/* Wrapper for horizontal scroll on mobile */
+.ziwei-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0 24px}
+.ziwei-grid{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--ink);border-radius:var(--r);box-shadow:var(--shadow-md);min-width:460px}
 .ziwei-cell{border:1px solid var(--border);padding:8px 10px;background:var(--card);min-height:105px;font-size:.78rem;transition:background .15s;position:relative}
 .ziwei-cell:hover{background:#fefdfb}
 .ziwei-cell.center-cell{background:var(--cream);min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}

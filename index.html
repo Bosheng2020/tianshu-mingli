@@ -10,8 +10,11 @@
     <link rel="apple-touch-icon" href="/favicon.svg">
     <title>天枢命理 — 八字 · 紫微斗数 · 梅花易数 · 观音灵签 · 风水</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>.cdn-loading{position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#c53d43,#c5922e,#c53d43);background-size:200%;height:3px;animation:cdnSlide 1.5s ease infinite}@keyframes cdnSlide{0%{background-position:200%}100%{background-position:0%}}</style>
+    <div class="cdn-loading" id="cdn-loading"></div>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.7/lunar.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/iztro@2.5.7/dist/iztro.min.js"></script>
+    <script>document.getElementById('cdn-loading').remove();</script>
 </head>
 <body>
 
@@ -62,6 +65,7 @@
                 </div>
             </div>
             <div id="solar-time-info" class="solar-time-info" style="display:none"></div>
+            <div id="history-list" class="history-list" style="display:none"></div>
         </form>
     </div>
 </section>

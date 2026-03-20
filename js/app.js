@@ -5,6 +5,44 @@
 (function() {
     'use strict';
 
+    // ===== History: 最近查询记录 =====
+    var HISTORY_KEY = 'tianshu_history';
+    function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch(e) { return []; } }
+    function saveHistory(entry) {
+      var h = getHistory();
+      // Dedup by same birth info
+      h = h.filter(function(x) { return !(x.year===entry.year && x.month===entry.month && x.day===entry.day && x.hour===entry.hour && x.gender===entry.gender); });
+      h.unshift(entry);
+      if (h.length > 10) h = h.slice(0, 10);
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch(e) {}
+    }
+    function renderHistory() {
+      var h = getHistory();
+      if (h.length === 0) return;
+      var container = document.getElementById('history-list');
+      if (!container) return;
+      container.innerHTML = h.map(function(item, i) {
+        return '<button class="history-item" data-idx="'+i+'">' +
+          item.year+'-'+item.month+'-'+item.day + ' ' + (item.hour||0)+':'+String(item.minute||0).padStart(2,'0') +
+          ' ' + (item.province||'') + (item.city||'') + ' ' + (item.gender==='male'?'男':'女') + '</button>';
+      }).join('');
+      container.style.display = 'block';
+      container.querySelectorAll('.history-item').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var item = h[parseInt(this.dataset.idx)];
+          if (!item) return;
+          document.getElementById('birth-year').value = item.year;
+          document.getElementById('birth-month').value = item.month;
+          document.getElementById('birth-day').value = item.day;
+          document.getElementById('birth-hour').value = item.hour || 12;
+          document.getElementById('birth-minute').value = item.minute || 0;
+          if (item.province) { document.getElementById('birth-province').value = item.province; updateCities(); }
+          document.querySelector('input[name="birth-gender"][value="'+item.gender+'"]').checked = true;
+          document.getElementById('birth-form').dispatchEvent(new Event('submit'));
+        });
+      });
+    }
+
     // lunar-javascript exports
     var LunarJS = window.Solar ? window : (window.lunar || {});
     var SolarClass = LunarJS.Solar || (typeof Solar !== 'undefined' ? Solar : null);
@@ -437,7 +475,7 @@
             o.value = prov; o.textContent = prov;
             provSel.appendChild(o);
         });
-        function updateCities() {
+        window.updateCities = function() {
             var prov = provSel.value;
             citySel.innerHTML = '';
             (provGroups[prov] || []).forEach(function(c) {
@@ -451,6 +489,7 @@
         updateCities();
     }
     populateSelectors();
+    renderHistory();
 
     // ===== True Solar Time =====
     function calcTrueSolarTime(year, month, day, hour, minute, lng) {
@@ -527,9 +566,13 @@
             '<span class="tst-detail"> ' + tst.desc + '</span>' + lunarInfo +
             (tst.dayOffset ? '<span class="tst-warn">真太阳时跨日，实际日期为' + sM + '月' + sD + '日</span>' : '');
 
+        // Save to history
+        var provEl = document.getElementById('birth-province');
+        saveHistory({ year:year, month:month, day:day, hour:hour, minute:minute, province:provEl?provEl.value:'', city:cityOpt?cityOpt.textContent:'', gender:gender });
+        renderHistory();
+
         // Record analytics (async, non-blocking)
         try {
-            var provEl = document.getElementById('birth-province');
             fetch('/api/record', {
                 method: 'POST', headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({
