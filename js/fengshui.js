@@ -117,6 +117,22 @@ const FengShui = (() => {
 
   var GRID_DIRS = ['东南','正南','西南','正东','中宫','正西','东北','正北','西北'];
 
+  // ===== 2.5 流月飞星 =====
+  // 年支分三组决定正月中宫起始星：子午卯酉→8, 辰戌丑未→5, 寅申巳亥→2
+  // 每月中宫星逐月递减1（逆飞）
+  function getMonthFlyStars(yearZhi, lunarMonth) {
+    var g1 = '子午卯酉', g2 = '辰戌丑未';
+    var start = g1.indexOf(yearZhi) >= 0 ? 8 : g2.indexOf(yearZhi) >= 0 ? 5 : 2;
+    var center = ((start - (lunarMonth - 1)) % 9 + 9) % 9;
+    if (center === 0) center = 9;
+    var grid = new Array(9);
+    for (var i = 0; i < 9; i++) {
+      var starNum = ((center - 1 + i) % 9) + 1;
+      grid[FLY_SEQ[i]] = starNum;
+    }
+    return { grid: grid, center: center, lunarMonth: lunarMonth };
+  }
+
   // ===== 3. 命理风水数据 =====
   var WX_DATA = {
     '木':{dir:'东',dir2:'东南',color:'绿色、青色',num:'3、8',material:'实木、竹制品、棉麻',plant:'发财树、富贵竹、绿萝',bedHead:'东',bedAvoid:'西（金克木）',industry:'教育、文化、医药、林业、服装'},
@@ -191,7 +207,23 @@ const FengShui = (() => {
     var dayMasterWx = baziResult.dayMasterWuxing || '';
     var strengthDesc = baziResult.strengthDesc || '';
 
-    return { ys:ys, ys2:ys2, js:js, guaNum:guaNum, guaName:guaName, guaGroup:guaGroup, guaDirs:guaDirs, flyGrid:flyGrid, currentYear:fsYear, birthYear:birthYear, gender:gender, birthInfo:birthInfo, dayMasterWx:dayMasterWx, strengthDesc:strengthDesc };
+    // 流月飞星
+    var monthFly = null;
+    try {
+      if (typeof Solar !== 'undefined') {
+        var nowS = Solar.fromYmd(now.getFullYear(), now.getMonth()+1, now.getDate());
+        var nowL = nowS.getLunar();
+        var yearZhi = nowL.getYearZhi();
+        var lunarMon = Math.abs(nowL.getMonth()); // abs for leap months
+        if (lunarMon < 1) lunarMon = 1;
+        if (lunarMon > 12) lunarMon = 12;
+        monthFly = getMonthFlyStars(yearZhi, lunarMon);
+        monthFly.monthCN = nowL.getMonthInChinese();
+        monthFly.yearZhi = yearZhi;
+      }
+    } catch(e) {}
+
+    return { ys:ys, ys2:ys2, js:js, guaNum:guaNum, guaName:guaName, guaGroup:guaGroup, guaDirs:guaDirs, flyGrid:flyGrid, monthFly:monthFly, currentYear:fsYear, birthYear:birthYear, gender:gender, birthInfo:birthInfo, dayMasterWx:dayMasterWx, strengthDesc:strengthDesc };
   }
 
   // ===== render =====
@@ -208,7 +240,7 @@ const FengShui = (() => {
     }
     html += '<p style="font-size:.85rem;color:var(--ink-light)">' + result.birthYear + '年 ' + (result.gender==='male'?'男':'女') + '命 | 用神：' + ys + ' | 忌神：' + js + (result.dayMasterWx ? ' | 日主：' + result.dayMasterWx : '') + (result.strengthDesc ? '（' + result.strengthDesc + '）' : '') + '</p>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px">';
-    [{id:'fs-bazhai',l:'八宅命卦'},{id:'fs-fly',l:'流年飞星'},{id:'fs-house',l:'居家布局'},{id:'fs-bed',l:'卧室床位'},{id:'fs-wealth',l:'催财布局'},{id:'fs-taboo',l:'风水禁忌'}].forEach(function(n) {
+    [{id:'fs-bazhai',l:'八宅命卦'},{id:'fs-fly',l:'流年飞星'},{id:'fs-mfly',l:'流月飞星'},{id:'fs-office',l:'办公室风水'},{id:'fs-house',l:'居家布局'},{id:'fs-bed',l:'卧室床位'},{id:'fs-wealth',l:'催财布局'},{id:'fs-taboo',l:'风水禁忌'}].forEach(function(n) {
       html += '<a href="#'+n.id+'" style="display:inline-block;padding:5px 14px;border-radius:20px;font-size:.82rem;background:var(--cream);border:1px solid var(--border);color:var(--ink);text-decoration:none;font-family:var(--font-h);transition:all .15s" onmouseover="this.style.background=\'var(--vermillion)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'var(--cream)\';this.style.color=\'var(--ink)\'">' + n.l + '</a>';
     });
     html += '</div></div>';
@@ -289,6 +321,187 @@ const FengShui = (() => {
       if (star.bad) html += '<p style="color:var(--vermillion)"><strong>化解：</strong>' + star.bad + '</p>';
       html += '</div></details>';
     });
+    html += '</div>';
+
+    // ===== 2.5 流月飞星 =====
+    if (result.monthFly) {
+      var mf = result.monthFly;
+      var LUNAR_MON_NAMES = {'正':'正月','二':'二月','三':'三月','四':'四月','五':'五月','六':'六月',
+        '七':'七月','八':'八月','九':'九月','十':'十月','冬':'冬月','腊':'腊月'};
+      var monthName = LUNAR_MON_NAMES[mf.monthCN] || (mf.monthCN + '月');
+
+      html += '<div class="interp-card"><h3 id="fs-mfly">本月飞星 — ' + monthName + '</h3>';
+      html += '<p style="font-size:.84rem;color:var(--ink-light)">流月飞星每月变化，揭示本月各方位的吉凶能量。依据年支（' + mf.yearZhi + '）推算，' + monthName + '中宫飞入' + NINE_STARS[mf.center].short + '。结合流年飞星一起看，可精确到月度方位吉凶。</p>';
+
+      // 月飞星九宫格
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:10px auto;max-width:400px;border:2px solid var(--gold);border-radius:8px;overflow:hidden">';
+      mf.grid.forEach(function(starNum, idx) {
+        var star = NINE_STARS[starNum];
+        var isCenter = (idx === 4);
+        var isBad = star.nature.indexOf('凶') >= 0;
+        // 叠加：流年飞星 + 流月飞星同一方位对比
+        var yearStar = result.flyGrid[idx];
+        var yearInfo = NINE_STARS[yearStar];
+        var yearBad = yearInfo.nature.indexOf('凶') >= 0;
+        var doubleBad = isBad && yearBad;
+        var doubleGood = !isBad && !yearBad;
+        var bg = doubleBad ? 'rgba(220,38,38,.1)' : isBad ? 'rgba(220,38,38,.05)' : doubleGood ? 'rgba(22,163,74,.08)' : isCenter ? 'var(--cream)' : 'rgba(22,163,74,.03)';
+
+        html += '<div style="background:'+bg+';padding:8px;text-align:center;min-height:80px">';
+        html += '<div style="font-size:.65rem;color:var(--ink-light)">' + GRID_DIRS[idx] + '</div>';
+        html += '<div style="font-size:1rem;font-weight:900;color:'+star.color+';margin:2px 0">' + star.short + '</div>';
+        html += '<div style="font-size:.58rem;color:'+star.color+'">' + star.nature + '</div>';
+        // 叠加年星
+        html += '<div style="font-size:.55rem;color:var(--ink-light);margin-top:2px;border-top:1px dashed var(--border);padding-top:2px">年' + yearInfo.short + '</div>';
+        if (doubleBad) html += '<div style="font-size:.55rem;color:#dc2626;font-weight:700">⚠️ 凶叠</div>';
+        if (doubleGood) html += '<div style="font-size:.55rem;color:var(--jade);font-weight:700">双吉</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      // 本月重点提示
+      html += '<h4>本月方位要点</h4>';
+      // 找本月五黄、二黑、八白位置
+      var mWuhuang = '', mErHei = '', mBaBai = '', mJiuZi = '';
+      mf.grid.forEach(function(sn, si) {
+        if (sn === 5) mWuhuang = GRID_DIRS[si];
+        if (sn === 2) mErHei = GRID_DIRS[si];
+        if (sn === 8) mBaBai = GRID_DIRS[si];
+        if (sn === 9) mJiuZi = GRID_DIRS[si];
+      });
+
+      // 凶位警示
+      html += '<div style="border:2px solid #dc2626;background:rgba(220,38,38,.03);padding:10px 14px;border-radius:8px;margin:8px 0">';
+      html += '<p style="font-weight:700;color:#dc2626;margin-bottom:4px">本月凶方</p>';
+      html += '<p style="font-size:.88rem"><strong>五黄煞：' + mWuhuang + '</strong> — 本月最凶方位！忌在此方位动土、装修、久坐。化解：放铜器或金属物件。</p>';
+      html += '<p style="font-size:.88rem"><strong>二黑病符：' + mErHei + '</strong> — 本月病星所在，不利健康。化解：放铜葫芦或六帝铜钱。</p>';
+      // 检查年月凶星叠加
+      var yearWuhuang = '', yearErHei = '';
+      result.flyGrid.forEach(function(sn, si) { if(sn===5) yearWuhuang=GRID_DIRS[si]; if(sn===2) yearErHei=GRID_DIRS[si]; });
+      if (mWuhuang === yearWuhuang) html += '<p style="font-size:.85rem;color:#dc2626;font-weight:700">⚠️ 本月五黄与流年五黄同宫（' + mWuhuang + '），凶气极重！此方位本月绝对不可动！</p>';
+      if (mErHei === yearErHei) html += '<p style="font-size:.85rem;color:#dc2626;font-weight:700">⚠️ 本月二黑与流年二黑同宫（' + mErHei + '），病气加重！此方位注意健康。</p>';
+      html += '</div>';
+
+      // 吉位提示
+      html += '<div style="border:2px solid var(--jade);background:rgba(45,143,111,.03);padding:10px 14px;border-radius:8px;margin:8px 0">';
+      html += '<p style="font-weight:700;color:var(--jade);margin-bottom:4px">本月吉方</p>';
+      html += '<p style="font-size:.88rem"><strong>八白财星：' + mBaBai + '</strong> — 本月最佳财位！宜在此方位办公、谈判、放置催财物品。</p>';
+      html += '<p style="font-size:.88rem"><strong>九紫喜庆：' + mJiuZi + '</strong> — 本月喜庆位。利感情、婚姻、添丁。宜放红色装饰。</p>';
+      // 找一白桃花位和六白贵人位
+      var mYiBai = '', mLiuBai = '';
+      mf.grid.forEach(function(sn, si) { if(sn===1) mYiBai=GRID_DIRS[si]; if(sn===6) mLiuBai=GRID_DIRS[si]; });
+      html += '<p style="font-size:.88rem"><strong>一白桃花：' + mYiBai + '</strong> — 利人缘社交。<strong>六白贵人：' + mLiuBai + '</strong> — 利事业升迁。</p>';
+      html += '</div>';
+
+      // 逐宫详解（折叠）
+      html += '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:.88rem;font-weight:600;color:var(--gold);padding:6px 0">展开九宫逐一详解</summary><div style="margin-top:6px">';
+      mf.grid.forEach(function(starNum, idx) {
+        var star = NINE_STARS[starNum];
+        var isBad = star.nature.indexOf('凶') >= 0;
+        html += '<details class="yearly-detail"' + (starNum===5||starNum===8?' open':'') + '>';
+        html += '<summary class="yearly-summary"><span style="color:'+star.color+';font-weight:700">' + star.short + '</span><span class="yr-gz">' + GRID_DIRS[idx] + '</span><span class="yr-age">' + star.nature + '</span></summary>';
+        html += '<div class="yearly-content"><p><strong>' + star.name + '</strong>（' + star.wx + '）— ' + star.meaning + '</p>';
+        if (star.good) html += '<p style="color:var(--jade)"><strong>催旺：</strong>' + star.good + '</p>';
+        if (star.bad) html += '<p style="color:var(--vermillion)"><strong>化解：</strong>' + star.bad + '</p>';
+        html += '</div></details>';
+      });
+      html += '</div></details>';
+
+      html += '</div>';
+    }
+
+    // ===== 2.8 办公室风水 =====
+    html += '<div class="interp-card"><h3 id="fs-office">办公室风水</h3>';
+    html += '<p style="font-size:.84rem;color:var(--ink-light)">根据命卦（' + result.guaName + '卦·' + result.guaGroup + '）和用神（' + ys + '）为您量身定制办公风水方案。</p>';
+
+    // 办公桌朝向
+    var tianyiDir = ''; for (var dt in result.guaDirs) { if (result.guaDirs[dt] === '天医') tianyiDir = dt; }
+    var fuweiDir = ''; for (var df in result.guaDirs) { if (result.guaDirs[df] === '伏位') fuweiDir = df; }
+    var yanNianDir2 = ''; for (var dyn in result.guaDirs) { if (result.guaDirs[dyn] === '延年') yanNianDir2 = dyn; }
+
+    html += '<h4>办公桌朝向</h4>';
+    html += '<p>坐在办公桌时，<strong>面朝方向</strong>决定了你吸纳什么能量：</p>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0">';
+    html += '<div style="padding:10px 14px;border:2px solid var(--jade);border-radius:8px;background:rgba(45,143,111,.03)">';
+    html += '<p style="font-weight:700;color:var(--jade);margin-bottom:4px">最佳：面朝' + DIR_CN[shengqiDir] + '</p>';
+    html += '<p style="font-size:.82rem">生气方，旺事业旺人脉。适合需要开拓业务、追求升职的人。</p></div>';
+    html += '<div style="padding:10px 14px;border:2px solid #2563eb;border-radius:8px;background:rgba(37,99,235,.03)">';
+    html += '<p style="font-weight:700;color:#2563eb;margin-bottom:4px">次选：面朝' + DIR_CN[yanNianDir2] + '</p>';
+    html += '<p style="font-size:.82rem">延年方，利人际和谐。适合需要团队协作、维护客户关系的岗位。</p></div>';
+    html += '<div style="padding:10px 14px;border:2px solid #0891b2;border-radius:8px;background:rgba(8,145,178,.03)">';
+    html += '<p style="font-weight:700;color:#0891b2;margin-bottom:4px">文职：面朝' + DIR_CN[tianyiDir] + '</p>';
+    html += '<p style="font-size:.82rem">天医方，利思考和决策。适合策划、研发、文案类工作。</p></div>';
+    html += '<div style="padding:10px 14px;border:2px solid #65a30d;border-radius:8px;background:rgba(101,163,13,.03)">';
+    html += '<p style="font-weight:700;color:#65a30d;margin-bottom:4px">安稳：面朝' + DIR_CN[fuweiDir] + '</p>';
+    html += '<p style="font-size:.82rem">伏位方，利平稳安定。适合不求大变化、只求稳步发展的阶段。</p></div>';
+    html += '</div>';
+
+    // 座位选择
+    html += '<h4>座位选择原则</h4>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0">';
+    // 好
+    html += '<div style="padding:10px 14px;border-radius:8px;background:rgba(45,143,111,.04)">';
+    html += '<p style="font-weight:700;color:var(--jade);margin-bottom:4px">宜</p>';
+    html += '<ul style="font-size:.84rem;padding-left:16px;margin:0">';
+    html += '<li>背后有墙（有靠山）</li>';
+    html += '<li>座位在整个办公室的' + DIR_CN[shengqiDir] + '方或' + DIR_CN[tianyiDir] + '方</li>';
+    html += '<li>左手边（青龙方）比右手边宽敞</li>';
+    html += '<li>光线充足、通风良好</li>';
+    html += '<li>桌面整洁有序</li>';
+    html += '</ul></div>';
+    // 忌
+    html += '<div style="padding:10px 14px;border-radius:8px;background:rgba(220,38,38,.04)">';
+    html += '<p style="font-weight:700;color:var(--vermillion);margin-bottom:4px">忌</p>';
+    html += '<ul style="font-size:.84rem;padding-left:16px;margin:0">';
+    html += '<li>背对门或走廊（犯小人）</li>';
+    html += '<li>正对厕所门或尖角（煞气冲射）</li>';
+    html += '<li>座位上方有横梁（压迫运势）</li>';
+    html += '<li>正对老板办公室门（压力过大）</li>';
+    html += '<li>桌面杂乱或堆满文件</li>';
+    html += '</ul></div>';
+    html += '</div>';
+
+    // 老板位 vs 员工位
+    html += '<h4>老板位 vs 员工位</h4>';
+    html += '<div style="border-left:3px solid var(--gold);padding:8px 14px;margin:6px 0;border-radius:0 6px 6px 0;background:rgba(197,146,46,.03)">';
+    html += '<p style="font-weight:700;color:var(--gold);margin-bottom:4px">老板/管理者</p>';
+    html += '<p style="font-size:.84rem">宜坐整个办公室的<strong>西北方</strong>（乾位，主权威）或<strong>' + DIR_CN[shengqiDir] + '方</strong>（个人生气位）。面朝门口方向，可掌控全局。背后宜靠实墙或高柜（靠山），忌背后是窗。桌上可放铜制或金属摆件增强权威感。</p>';
+    html += '</div>';
+
+    html += '<div style="border-left:3px solid #2563eb;padding:8px 14px;margin:6px 0;border-radius:0 6px 6px 0;background:rgba(37,99,235,.03)">';
+    html += '<p style="font-weight:700;color:#2563eb;margin-bottom:4px">员工/打工人</p>';
+    html += '<p style="font-size:.84rem">宜坐<strong>' + DIR_CN[tianyiDir] + '方</strong>（天医位，利人际和决策）或<strong>' + DIR_CN[yanNianDir2] + '方</strong>（延年位，利升迁）。面朝' + DIR_CN[shengqiDir] + '吸纳生气。桌面左边（青龙方）放文件、电话等活跃物品；右边（白虎方）尽量安静整洁。</p>';
+    html += '</div>';
+
+    html += '<div style="border-left:3px solid var(--jade);padding:8px 14px;margin:6px 0;border-radius:0 6px 6px 0;background:rgba(45,143,111,.03)">';
+    html += '<p style="font-weight:700;color:var(--jade);margin-bottom:4px">求升职加薪</p>';
+    html += '<p style="font-size:.84rem">在办公桌的<strong>' + DIR_CN[shengqiDir] + '</strong>方（个人生气位）放一盆小绿植或水晶球。';
+    // 流年六白位
+    var liuBaiDir = '';
+    result.flyGrid.forEach(function(sn, si) { if(sn===6) liuBaiDir=GRID_DIRS[si]; });
+    html += result.currentYear + '年六白权力星飞临<strong>' + liuBaiDir + '</strong>，可在此方位放金属饰品催旺贵人运和升迁运。</p>';
+    html += '</div>';
+
+    // 办公桌上的五行布局
+    html += '<h4>办公桌面五行布局</h4>';
+    html += '<p style="font-size:.84rem;color:var(--ink-light)">用神为<strong>' + ys + '</strong>，忌神为<strong>' + js + '</strong>，桌面布置应补用神、避忌神。</p>';
+    var officeItems = {
+      '木':'绿植（小盆栽）、木质笔筒、竹制杯垫。宜放东方或东南方。',
+      '火':'红色桌垫或台灯、紫色小摆件。宜放南方。忌放太多水杯。',
+      '土':'陶瓷杯、黄水晶、石头摆件。宜放东北或西南。',
+      '金':'金属笔筒、铜制名片夹、银色相框。宜放西方或西北。',
+      '水':'水杯常满、小鱼缸（1条黑色鱼）、深蓝色桌垫。宜放北方。'
+    };
+    var officeAvoid = {
+      '木':'过多金属利器（剪刀、裁纸刀外露）',
+      '火':'大量水摆件、深蓝/黑色装饰',
+      '土':'过多绿植（木克土）',
+      '金':'红色过多（火克金）、蜡烛台灯',
+      '水':'过多黄色/土色物品、石头摆件过多'
+    };
+    html += '<p><span style="color:var(--jade);font-weight:700">宜：</span>' + (officeItems[ys]||'') + '</p>';
+    html += '<p><span style="color:var(--vermillion);font-weight:700">忌：</span>' + (officeAvoid[ys]||'') + '</p>';
+
     html += '</div>';
 
     // ===== 3. 居家布局 =====
