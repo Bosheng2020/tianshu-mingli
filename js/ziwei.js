@@ -1254,6 +1254,9 @@ const ZiWei = (function () {
       });
     });
 
+    // Helper: add 宫 suffix only if name doesn't already end with 宫
+    function gong(name) { return name.endsWith('宫') ? name : name + '宫'; }
+
     // Register flying star click handler directly (not via <script> tag)
     var _palDataJSON = JSON.stringify(pals.map(function(p){return {name:p.name,stem:p.heavenlyStem,branch:p.earthlyBranch,isOrig:p.isOriginalPalace}}));
     var _sihuaJSON = JSON.stringify(SIHUA_TBL);
@@ -1332,23 +1335,90 @@ const ZiWei = (function () {
       document.querySelectorAll('.ziwei-cell').forEach(function(c){c.style.outline='none'});
       el.style.outline = '2px solid #c5922e';
 
-      var h = '<strong>' + p.name + '宫</strong>（' + p.stem + '干）飞星四化：<br><br>';
+      // helper: 宫 suffix
+      function gn(name) { return name.endsWith('宫') ? name : name + '宫'; }
+
+      // Detect what 四化 already exist in each target palace (生年四化 + 自化)
+      // Build a map: palaceName -> array of hua types present
+      var palaceHua = {};
+      d.palData.forEach(function(pp) {
+        // Check for 生年四化 (from natal mutagen)
+        // We don't have direct access here, but we can check if the source palace stem = year stem
+        // For simplicity, just track what this palace is about to receive
+      });
+
+      var h = '<strong>' + gn(p.name) + '</strong>（' + p.stem + '干）飞星四化：<br><br>';
+
+      // First pass: collect targets
+      var flyTargets = {};
+      row.forEach(function(star, i) {
+        var target = d.starPal[star] || '未知';
+        if (!flyTargets[target]) flyTargets[target] = [];
+        flyTargets[target].push({star:star, hua:huaFull[i], idx:i, isSelf:(target===p.name)});
+      });
+
       row.forEach(function(star, i) {
         var target = d.starPal[star] || '未知';
         var isSelf = (target === p.name);
         h += '<div style="margin-bottom:10px;padding:8px 12px;border-left:3px solid '+huaColor[i]+';background:rgba(0,0,0,.02);border-radius:0 6px 6px 0">';
-        h += '<span style="color:'+huaColor[i]+';font-weight:700;font-size:.95rem">' + star + ' ' + huaFull[i] + '</span> → <strong>' + target + '宫</strong>';
+        h += '<span style="color:'+huaColor[i]+';font-weight:700;font-size:.95rem">' + star + ' ' + huaFull[i] + '</span> → <strong>' + gn(target) + '</strong>';
         if (isSelf) h += ' <span style="background:#dc2626;color:#fff;padding:1px 6px;border-radius:3px;font-size:.75rem;font-weight:700">自化!</span>';
-        // Add interpretation
         var interp = flyInterp[huaFull[i]];
         if (interp && interp[target]) {
-          h += '<br><span style="font-size:.84rem;color:#64748b">' + p.name + '的' + huaFull[i].charAt(1) + '气飞入' + target + '：' + interp[target] + '</span>';
+          h += '<br><span style="font-size:.84rem;color:#64748b">' + gn(p.name) + '的' + huaFull[i].charAt(1) + '气飞入' + gn(target) + '：' + interp[target] + '</span>';
         }
         if (isSelf) {
-          h += '<br><span style="font-size:.84rem;color:#dc2626">自化' + huaFull[i].charAt(1) + '：' + p.name + '宫的' + huaFull[i].charAt(1) + '气留不住，会自动向外流散。</span>';
+          h += '<br><span style="font-size:.84rem;color:#dc2626">自化' + huaFull[i].charAt(1) + '：' + gn(p.name) + '的' + huaFull[i].charAt(1) + '气留不住，会自动向外流散。</span>';
         }
         h += '</div>';
       });
+
+      // Check for 四化组合 (同一目标宫收到多个四化)
+      var comboInterp = {
+        '化禄+化忌': '禄忌同宫：又爱又恨之象。该宫代表的领域既有福气又有困扰，得到的同时伴随着执念和烦恼。财来也忧、事成也虑。需学会享受已拥有的，不过度焦虑。',
+        '化忌+化禄': '禄忌同宫：又爱又恨之象。该宫代表的领域既有福气又有困扰，得到的同时伴随着执念和烦恼。',
+        '化禄+化权': '禄权同宫：大吉组合！福气加掌控力，该宫代表的领域既有资源又有能力驾驭。财官双美，做什么都顺。',
+        '化权+化禄': '禄权同宫：大吉组合！福气加掌控力，事半功倍。',
+        '化禄+化科': '禄科同宫：福气加名声，名利双收之象。该宫领域既有实惠又有面子。',
+        '化科+化禄': '禄科同宫：名利双收，有里有面。',
+        '化权+化忌': '权忌同宫：有能力但也有压力。掌控力强但执念也深，容易因为太想做好反而焦虑。适度放松才能发挥实力。',
+        '化忌+化权': '权忌同宫：有压力也有动力。化忌的困扰会激发化权的行动力，在压力下反而能成事。',
+        '化权+化科': '权科同宫：实力配名声，有权有名。该宫领域能做出成绩且被认可。',
+        '化科+化权': '权科同宫：名望加实力，声名远播。',
+        '化科+化忌': '科忌同宫：有名声但也有困扰。表面风光内心焦虑，或名声带来压力。需保持真实，不为虚名所累。',
+        '化忌+化科': '科忌同宫：困扰中也有贵人。化忌虽苦但化科带来解救之人，逢凶化吉的组合。'
+      };
+
+      for (var tgt in flyTargets) {
+        if (flyTargets[tgt].length >= 2) {
+          var huaList = flyTargets[tgt].map(function(f){return f.hua});
+          // Check all pairs
+          for (var a=0; a<huaList.length; a++) {
+            for (var b=a+1; b<huaList.length; b++) {
+              var comboKey = huaList[a] + '+' + huaList[b];
+              var comboText = comboInterp[comboKey];
+              if (comboText) {
+                h += '<div style="margin-bottom:10px;padding:10px 14px;border:2px dashed #c5922e;background:rgba(197,146,46,.04);border-radius:6px">';
+                h += '<span style="font-weight:700;color:#c5922e">⚡ ' + gn(tgt) + '：' + huaList[a] + ' + ' + huaList[b] + ' 组合</span><br>';
+                h += '<span style="font-size:.88rem">' + comboText + '</span>';
+                h += '</div>';
+              }
+            }
+          }
+        }
+      }
+
+      // Also check: does target palace have natal mutagen (生年四化) + this fly hua?
+      // This creates cross-palace combo like "生年忌 + 飞入禄"
+      // We need natal mutagen info - stored in _fsData
+      if (!d.natalHua) {
+        d.natalHua = {};
+        d.palData.forEach(function(pp, pi) {
+          // We stored natal mutagen in the stars earlier, but don't have it in palData
+          // Skip for now - this would need astrolabe data passed through
+        });
+      }
+
       content.innerHTML = h;
       panel.style.display = 'block';
       panel.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -1677,7 +1747,7 @@ const ZiWei = (function () {
       html += '<div style="text-align:center;padding:12px 6px;border-radius:8px;background:' + bg + ';border:1px solid ' + borderC + '">';
       html += '<div style="font-size:.78rem;color:' + huaColors[idx] + ';font-weight:700">' + huaFull[idx] + '</div>';
       html += '<div style="font-size:1.2rem;font-weight:900;font-family:var(--font-h);margin:6px 0;color:' + huaColors[idx] + '">' + (found ? found.star : '—') + '</div>';
-      html += '<div style="font-size:.78rem;color:var(--ink-light)">' + (found ? found.palace + '宫' : '') + '</div>';
+      html += '<div style="font-size:.78rem;color:var(--ink-light)">' + (found ? gong(found.palace) : '') + '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -1687,7 +1757,7 @@ const ZiWei = (function () {
       var fullLabel = idx >= 0 ? huaFull[idx] : m.hua;
       var color = idx >= 0 ? huaColors[idx] : 'var(--ink)';
       var hd = SIHUA_EFFECTS[fullLabel]; var pd = hd ? hd[m.palace] : '';
-      html += '<p><strong style="color:' + color + '">' + m.star + ' ' + fullLabel + '</strong> 在' + m.palace + '宫' + (pd ? ' — ' + pd : '') + '</p>';
+      html += '<p><strong style="color:' + color + '">' + m.star + ' ' + fullLabel + '</strong> 在' + gong(m.palace) + (pd ? ' — ' + pd : '') + '</p>';
     });
 
     // 飞星派：宫干四化（每宫天干飞出的四化）
@@ -1728,7 +1798,7 @@ const ZiWei = (function () {
         });
         if (landPalace) {
           var isSelf = (landPalace === palaceName);
-          html += '<p>' + '<strong style="color:' + huaColors[idx] + '">' + starName + ' ' + huaFull[idx] + '</strong> → ' + landPalace + '宫' + (isSelf ? ' <span style="color:var(--vermillion);font-weight:700">（自化' + huaFull[idx].charAt(1) + '）</span>' : '') + '</p>';
+          html += '<p>' + '<strong style="color:' + huaColors[idx] + '">' + starName + ' ' + huaFull[idx] + '</strong> → ' + gong(landPalace) + (isSelf ? ' <span style="color:var(--vermillion);font-weight:700">（自化' + huaFull[idx].charAt(1) + '）</span>' : '') + '</p>';
         }
       });
       html += '</div></details>';
