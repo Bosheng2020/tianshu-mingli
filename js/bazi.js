@@ -965,11 +965,16 @@ const BaZi = (function () {
     var useYS = result.finalYongShen || result.yongShen;
     var useJS = result.jiShen;
     var missingWx = wxOrder.filter(function(wx) { return result.elementPct[wx] === 0; });
-    var weakWx = wxOrder.filter(function(wx) { return result.elementPct[wx] > 0 && result.elementPct[wx] <= 5; });
+    var weakWx = wxOrder.filter(function(wx) { return result.elementPct[wx] > 0 && result.elementPct[wx] <= 10; });
+    var strongWx = wxOrder.filter(function(wx) { return result.elementPct[wx] >= 30; });
 
-    if (missingWx.length > 0 || weakWx.length > 0) {
-      html.push('<h4>五行缺失分析</h4>');
-      html.push('<p style="font-size:.84rem;color:var(--ink-light)">民间常说「缺什么补什么」，这是不准确的。正确的做法是<strong>看用神需要什么才补什么</strong>。缺失的五行如果是忌神，缺了反而是福气。</p>');
+    // 始终显示五行平衡分析
+    html.push('<h4>五行平衡分析</h4>');
+    html.push('<p style="font-size:.84rem;color:var(--ink-light)">民间常说「缺什么补什么」，这是不准确的。正确的做法是<strong>看用神需要什么才补什么</strong>。缺失或偏弱的五行如果是忌神，不补反而更好。</p>');
+
+    if (missingWx.length === 0 && weakWx.length === 0) {
+      html.push('<p>命局五行无完全缺失，分布相对均衡。</p>');
+    }
 
       var cityMap = {
         '木': '东方城市（上海、杭州、南京、苏州、日本方向），或名含「木、林、森、东」的地方',
@@ -1033,15 +1038,47 @@ const BaZi = (function () {
         html.push('</div>');
       });
 
-      // 弱但不缺的五行
-      weakWx.forEach(function(wx) {
-        if (wx === useYS) {
-          html.push('<div style="border-left:3px solid #d97706;background:rgba(217,119,6,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">');
-          html.push('<p><strong>' + elSpan(wx + '偏弱（' + result.elementPct[wx] + '%）', wx) + '</strong> — ' + wx + '是用神但力量不足，宜适当增强。方位 ' + dirMap[wx] + '，颜色 ' + colorMap[wx] + '。</p>');
-          html.push('</div>');
-        }
-      });
+    // 弱但不缺的五行（用神偏弱需增强）
+    weakWx.forEach(function(wx) {
+      if (missingWx.indexOf(wx) >= 0) return; // already handled above
+      var isYS = (wx === useYS);
+      var isJS = (wx === useJS);
+      if (isYS) {
+        html.push('<div style="border-left:3px solid #d97706;background:rgba(217,119,6,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">');
+        html.push('<p><strong>' + elSpan(wx + '偏弱（' + result.elementPct[wx] + '%）— 用神力量不足', wx) + '</strong></p>');
+        html.push('<p>' + wx + '是用神但力量偏弱，宜适当增强。方位 ' + dirMap[wx] + '，颜色 ' + colorMap[wx] + '，数字 ' + numMap[wx] + '。</p>');
+        html.push('<p>适合发展城市：' + cityMap[wx] + '</p>');
+        html.push('<p>推荐饰品：' + jewelMap[wx] + '</p>');
+        html.push('</div>');
+      } else if (!isJS) {
+        html.push('<div style="border-left:3px solid var(--border);padding:8px 14px;margin:4px 0;border-radius:0 6px 6px 0">');
+        html.push('<p>' + elSpan(wx + '偏弱（' + result.elementPct[wx] + '%）', wx) + ' — 非用神非忌神，影响不大。</p>');
+        html.push('</div>');
+      }
+    });
+
+    // 偏旺的五行（忌神偏旺需化解）
+    strongWx.forEach(function(wx) {
+      var isJS = (wx === useJS);
+      if (isJS) {
+        var keWx = {'木':'金','火':'水','土':'木','金':'火','水':'土'}[wx] || '';
+        html.push('<div style="border-left:3px solid var(--vermillion);background:rgba(220,38,38,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">');
+        html.push('<p><strong style="color:var(--vermillion)">' + elSpan(wx + '偏旺（' + result.elementPct[wx] + '%）— 忌神过旺！', wx) + '</strong></p>');
+        html.push('<p>' + wx + '是忌神且力量过旺，对命局不利。宜用' + keWx + '（克制' + wx + '的五行）来化解。减少接触五行属' + wx + '的事物。</p>');
+        html.push('</div>');
+      }
+    });
+
+    // 五行全不缺也没偏弱偏旺时，给出用神方位建议
+    if (missingWx.length === 0 && weakWx.length === 0) {
+      html.push('<p>虽然五行不缺，但仍需根据用神方向调整：</p>');
+      html.push('<div style="border-left:3px solid var(--jade);background:rgba(22,163,74,.04);padding:10px 14px;margin:6px 0;border-radius:0 6px 6px 0">');
+      html.push('<p><strong>用神 ' + elSpan(useYS, useYS) + ' 增强建议：</strong>方位 ' + dirMap[useYS] + '，颜色 ' + colorMap[useYS] + '，数字 ' + numMap[useYS] + '</p>');
+      html.push('<p>适合发展城市：' + cityMap[useYS] + '</p>');
+      html.push('<p>推荐饰品：' + jewelMap[useYS] + '</p>');
+      html.push('</div>');
     }
+
     html.push('</div>');
 
     // ==================== 6. 日主旺衰分析 ====================
