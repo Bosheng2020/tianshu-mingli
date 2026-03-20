@@ -2261,14 +2261,24 @@ const ZiWei = (function () {
       html += '<p style="font-weight:700;margin:10px 0 6px;color:var(--gold)">吉凶平衡</p>';
       if (totalGood >= 4 && totalBad <= 1) {
         html += '<p style="font-size:.88rem;color:var(--jade)">三方四正吉星云集，极为难得！贵人运极佳，做事顺风顺水，一生多有助力。应善用这份福气，多行善事以增福报。</p>';
-      } else if (totalGood > totalBad + 1) {
+      } else if (totalGood >= 2 && totalBad === 0) {
+        html += '<p style="font-size:.88rem;color:var(--jade)">三方四正有吉无煞，运势平顺。贵人暗中相助，虽无大波大折，但做事多能遂心如意。</p>';
+      } else if (totalGood > 0 && totalBad === 0) {
+        html += '<p style="font-size:.88rem;color:var(--jade)">三方四正无煞星干扰，虽吉星不多但胜在平稳。命主行事少有阻碍，稳步前进即可积累成就。</p>';
+      } else if (totalGood > totalBad) {
         html += '<p style="font-size:.88rem;color:var(--jade)">吉星多于煞星，整体运势良好。贵人相助多，做事较为顺利。少数煞星反而增添行动力，可谓吉中带劲。</p>';
       } else if (totalBad >= 4 && totalGood <= 1) {
         html += '<p style="font-size:.88rem;color:var(--vermillion)">三方四正煞星较重，人生考验较多。但煞星也代表无畏的勇气和强大的执行力。历经磨炼后往往能成就非凡事业。关键在于修身养性，化煞为用。</p>';
-      } else if (totalBad > totalGood + 1) {
+      } else if (totalBad >= 2 && totalGood === 0) {
+        html += '<p style="font-size:.88rem;color:var(--vermillion)">三方四正有煞无吉，行事阻碍较多。但煞星之人往往更具魄力和行动力，逆境中反而能激发潜力。建议广结善缘以补贵人之不足。</p>';
+      } else if (totalBad > 0 && totalGood === 0) {
+        html += '<p style="font-size:.88rem;color:var(--vermillion)">三方四正缺少吉星助力，凡事需靠自身努力。煞星带来的压力也是成长的动力，脚踏实地终能有所成就。</p>';
+      } else if (totalBad > totalGood) {
         html += '<p style="font-size:.88rem;color:var(--vermillion)">煞星多于吉星，行事需多加谨慎。虽然挑战较多，但煞星之人往往更有魄力和行动力。建议稳扎稳打，不宜冒进。配合大运吉时积极把握机会。</p>';
+      } else if (totalGood === 0 && totalBad === 0) {
+        html += '<p style="font-size:.88rem">三方四正无特殊吉煞星介入，命局清净。运势平稳无大起大落，全凭主星格局和四化配置来论吉凶。自身修为和后天努力是决定成败的关键。</p>';
       } else {
-        html += '<p style="font-size:.88rem">吉凶参半，命局较为平衡。运势有起有落，属于需要自身努力来决定成败的格局。把握吉星时机进取，煞星时期蛰伏修炼，张弛有度方为上策。</p>';
+        html += '<p style="font-size:.88rem">吉凶星数量相当，命局较为平衡。运势有起有落，吉星带来的机遇和煞星带来的挑战并存。善用吉星时机进取，煞星时期蛰伏修炼，张弛有度方为上策。</p>';
       }
 
       // 四化在三方四正的综合影响
